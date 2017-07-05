@@ -1,2 +1,8 @@
 # kilebeat
-[filebeat](https://www.elastic.co/guide/en/beats/filebeat/current/index.html) in java using AKKA
+[filebeat](https://www.elastic.co/guide/en/beats/filebeat/current/filebeat-overview.html) in java using [AKKA](http://akka.io)
+
+For the first release with support only two connector 
+- generic http (JSON over POST)
+- kafka 
+
+We also support stop and resume of endpoint connector
