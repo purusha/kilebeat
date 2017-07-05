@@ -1,16 +1,15 @@
 package com.skillbill.at.http;
 
-import java.nio.file.Path;
 import java.util.concurrent.Callable;
 import java.util.function.Supplier;
 
 public class HttpRetryCommand {
 	
 	private final int maxRetries;	
-	private final Path path;
+	private final String path;
 	private int retryCounter;
 
-	public HttpRetryCommand(int maxRetries, Path path) {
+	public HttpRetryCommand(int maxRetries, String path) {
 		this.maxRetries = maxRetries;
 		this.path = path;
 	}
@@ -52,7 +51,7 @@ public class HttpRetryCommand {
                     retryCounter++;
 
                     try {
-                        Thread.sleep(2500); //TODO usa il backoff esponenziale invece della sleep
+                        Thread.sleep(1500); //TODO usa il backoff esponenziale invece della sleep
                     } catch (InterruptedException e) {}
 
                     if (retryCounter >= maxRetries) {
@@ -79,7 +78,7 @@ public class HttpRetryCommand {
                     retryCounter++;
 
                     try {
-                        Thread.sleep(2500); //TODO usa il backoff esponenziale invece della sleep
+                        Thread.sleep(1500); //TODO usa il backoff esponenziale invece della sleep
                     } catch (InterruptedException e) {}
 
                     if (retryCounter >= maxRetries) {

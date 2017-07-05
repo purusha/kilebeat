@@ -1,4 +1,4 @@
-package com.skillbill.at;
+package com.skillbill.at.akka.dto;
 
 import java.nio.file.Path;
 
@@ -9,13 +9,13 @@ import lombok.ToString;
 @ToString
 public class NewLineEvent {
 
-	private String line;
-	private long ts;
-	private Path path;
+	private final String line;
+	private final long ts;
+	private final String path;
 
 	public NewLineEvent(String line, Path path) {
 		this.line = line;		
-		this.path = path;
+		this.path = path.toString();
 		this.ts = System.currentTimeMillis();
 	}
 	

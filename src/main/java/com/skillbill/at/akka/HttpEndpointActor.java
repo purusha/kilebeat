@@ -3,7 +3,9 @@ package com.skillbill.at.akka;
 import org.codehaus.jackson.jaxrs.JacksonJsonProvider;
 
 import com.google.inject.Inject;
-import com.skillbill.at.NewLineEvent;
+import com.skillbill.at.akka.dto.HttpEndPointConfiuration;
+import com.skillbill.at.akka.dto.HttpEndPointFailed;
+import com.skillbill.at.akka.dto.NewLineEvent;
 import com.skillbill.at.guice.GuiceAbstractActor;
 import com.skillbill.at.http.HttpRetryCommand;
 import com.sun.jersey.api.client.Client;
@@ -13,8 +15,7 @@ import com.sun.jersey.api.client.config.ClientConfig;
 import com.sun.jersey.api.client.config.DefaultClientConfig;
 import com.sun.jersey.api.json.JSONConfiguration;
 
-import lombok.AllArgsConstructor;
-import lombok.Data;
+import akka.actor.ActorRef;
 import lombok.extern.slf4j.Slf4j;
 
 @Slf4j
@@ -24,8 +25,7 @@ public class HttpEndpointActor extends GuiceAbstractActor {
 	private HttpEndPointConfiuration conf;
 	
 	@Inject
-	public HttpEndpointActor() {		
-		
+	public HttpEndpointActor() {				
         final ClientConfig cc = new DefaultClientConfig();  
         cc.getFeatures().put(JSONConfiguration.FEATURE_POJO_MAPPING, Boolean.TRUE);
         cc.getSingletons().add(new JacksonJsonProvider());
@@ -47,6 +47,8 @@ public class HttpEndpointActor extends GuiceAbstractActor {
 		super.postStop();
 		
 		LOGGER.info("############################################ " + getSelf().path());
+		
+		getContext().parent().tell(new HttpEndPointFailed(conf), ActorRef.noSender());
 	}
 	
 	@Override
@@ -59,7 +61,7 @@ public class HttpEndpointActor extends GuiceAbstractActor {
 	private ClientResponse send(NewLineEvent s) {
 		//LOGGER.info("[row@{}] {}", getSelf().path(), s);	
 		
-		return new HttpRetryCommand(3, s.getPath()).run(() -> {			
+		return new HttpRetryCommand(3, s.getPath()).run(() -> {					
 			final WebResource resource = client.resource(conf.getPath());
 			
 			final ClientResponse response = resource
@@ -73,13 +75,5 @@ public class HttpEndpointActor extends GuiceAbstractActor {
 			
 			return response;			
 		});						
-	}	
-}
-
-@Data
-@AllArgsConstructor
-class HttpEndPointConfiuration {
-
-	private String path;
-
+	}		
 }	

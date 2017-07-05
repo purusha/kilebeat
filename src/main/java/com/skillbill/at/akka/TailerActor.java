@@ -1,17 +1,20 @@
 package com.skillbill.at.akka;
 
+import static akka.actor.SupervisorStrategy.stop;
+
 import java.io.File;
 import java.nio.charset.Charset;
-import java.util.ArrayList;
-import java.util.List;
 import java.util.concurrent.TimeUnit;
+import java.util.stream.Collectors;
 import java.util.stream.IntStream;
 
 import org.apache.commons.io.input.Tailer;
 import org.apache.commons.io.input.TailerListener;
 
 import com.google.inject.Inject;
-import com.skillbill.at.NewLineEvent;
+import com.skillbill.at.akka.dto.HttpEndPointConfiuration;
+import com.skillbill.at.akka.dto.HttpEndPointFailed;
+import com.skillbill.at.akka.dto.NewLineEvent;
 import com.skillbill.at.guice.GuiceAbstractActor;
 import com.skillbill.at.guice.GuiceActorUtils;
 
@@ -27,8 +30,6 @@ import akka.routing.Router;
 import lombok.extern.slf4j.Slf4j;
 import scala.concurrent.duration.Duration;
 
-import static akka.actor.SupervisorStrategy.*;
-
 @Slf4j
 public class TailerActor extends GuiceAbstractActor implements TailerListener  {	
 	
@@ -37,38 +38,53 @@ public class TailerActor extends GuiceAbstractActor implements TailerListener  {
 	private static final boolean FROM_END = true;
 	private static final boolean RE_OPEN = true;
 	
-	private final Router router;
+	private Router router;
 	private final File resource;	
 
 	@Inject
 	public TailerActor() {
-		resource = new File("/home/developer/a");
+		resource = new File("/Users/power/Tmp/a");
 		
 		Tailer.create(
 			resource, Charset.forName("UTF-8"), this, DELAY, FROM_END, RE_OPEN, BUFFER_SIZE
 		);		
-		
-		final List<Routee> routees = new ArrayList<Routee>();	
-		
-		IntStream.range(1, 4).forEach(ic -> {
-			
-			//create
-			final ActorRef actor = getContext().actorOf(
-				GuiceActorUtils.makeProps(getContext().system(), HttpEndpointActor.class)
-			);
-			
-			//configure
-			actor.tell(new HttpEndPointConfiuration("http://localhost:4242" + ic), ActorRef.noSender());
-						
-			//getContext().watch(actor); //to see all event associated with this actor, 4 example the 'Terminated'
-			
-			//add
-			routees.add(new ActorRefRoutee(actor));
-			
-		}); 
-				
-		router = new Router(new BroadcastRoutingLogic(), routees);	
+									
+		router = new Router(
+			new BroadcastRoutingLogic(),			
+			IntStream.range(1, 2)
+				.mapToObj(ic -> buildHttpActor(new HttpEndPointConfiuration("http://localhost:8888")))
+				.collect(Collectors.toList())			
+		);	
 	}
+
+	private Routee buildHttpActor(HttpEndPointConfiuration conf) {
+		
+		//create
+		final ActorRef actor = getContext().actorOf(
+			GuiceActorUtils.makeProps(getContext().system(), HttpEndpointActor.class)
+		);
+		
+		//configure
+		actor.tell(conf, ActorRef.noSender());
+					
+		getContext().watch(actor); //to see Terminated event associated with this actor
+		
+		return new ActorRefRoutee(actor);
+	}
+
+//	@Override
+//	public void postStop() throws Exception {
+//		super.postStop();
+//		
+//		LOGGER.info("############################################ " + getSelf().path());
+//	}
+	
+//	@Override
+//	public void preStart() throws Exception {
+//		super.preStart();
+//		
+//		LOGGER.info("**************************************** " + getSelf().path());
+//	}
 
 	@Override
 	public Receive createReceive() {
@@ -76,11 +92,24 @@ public class TailerActor extends GuiceAbstractActor implements TailerListener  {
 			.match(NewLineEvent.class, s -> {
 				LOGGER.info("[row] {}", s);
 				
-				router.route(s, getSender());
+				router.route(s, ActorRef.noSender());
 			})
-//			.match(Terminated.class, t -> {
-//				LOGGER.warn("actor {} is terminated", t.actor());								
-//			})
+			.match(Terminated.class, t -> {				
+				final ActorRef fail = t.actor();
+				LOGGER.warn("actor {} is terminated", fail);
+				
+				getContext().unwatch(fail);				
+				router = router.removeRoutee(fail);																			
+			})
+			.match(HttpEndPointFailed.class, f -> {
+				if (f.isExpired()) {
+					LOGGER.info("expired {}", f);
+					router = router.addRoutee(buildHttpActor(f.getConf()));
+				} else {
+					//LOGGER.info("NOT expired {}", f);
+					getSelf().tell(f, ActorRef.noSender()); //NOT GOOD IDEA ... PLEASE REMOVE ME ASAP !!?
+				}
+			})
 			.matchAny(o -> {
 				LOGGER.warn("not handled message", o);
 			})
@@ -112,21 +141,20 @@ public class TailerActor extends GuiceAbstractActor implements TailerListener  {
 		//getSelf().tell(ex, ActorRef.noSender());
 	}
 	
-//	@Override
-//	public SupervisorStrategy supervisorStrategy() {		
-//		
-//		return new OneForOneStrategy(
-//			1, 
-//			Duration.create(1, TimeUnit.MINUTES), 
-//			DeciderBuilder.
-//				match(Exception.class, e -> stop()).
-////	        	match(ArithmeticException.class, e -> resume()).
-////	        	match(NullPointerException.class, e -> restart()).
-////	        	match(IllegalArgumentException.class, e -> stop()).
-////	        	matchAny(o -> escalate()).
-//				build()
-//        );
-//		
-//	}
+	@Override
+	public SupervisorStrategy supervisorStrategy() {				
+		//strategy is applied only to the child actor that failed
+		return new OneForOneStrategy( 
+			1, 
+			Duration.create(1, TimeUnit.MINUTES), 
+			DeciderBuilder.
+				match(Exception.class, e -> stop()).
+//	        	match(ArithmeticException.class, e -> resume()).
+//	        	match(NullPointerException.class, e -> restart()).
+//	        	match(IllegalArgumentException.class, e -> stop()).
+//	        	matchAny(o -> escalate()).
+				build()
+        );		
+	}
 	
 }
