@@ -1,0 +1,14 @@
+.classpath
+.project
+.settings/
+target/
+*~
+*.log
+*/activemq-data/
+.idea/
+*.iml
+*.ipr
+*.iws
+mail-server/out
+.pydevproject
+node_modules/
