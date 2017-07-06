@@ -1,4 +1,4 @@
-package kilebeat;
+package com.skillbill.at.kilebeat;
 
 import java.io.File;
 
