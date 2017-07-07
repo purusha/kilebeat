@@ -1,6 +1,7 @@
 package com.skillbill.at;
 
 import com.google.inject.Injector;
+import com.skillbill.at.akka.ExportsManagerActor;
 import com.skillbill.at.akka.TailerActor;
 import com.skillbill.at.guice.GuiceActorUtils;
 import com.skillbill.at.guice.GuiceExtension;
@@ -41,7 +42,8 @@ public class KileBeatApplication {
 //			);
         
         system.actorOf(
-    		GuiceActorUtils.makeProps(system, TailerActor.class)
+    		//GuiceActorUtils.makeProps(system, TailerActor.class)
+    		GuiceActorUtils.makeProps(system, ExportsManagerActor.class)
 		);
         
         LOGGER.info("-------------------------------------------------");

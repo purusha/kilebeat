@@ -3,20 +3,18 @@ package com.skillbill.at.akka;
 import static akka.actor.SupervisorStrategy.stop;
 
 import java.io.File;
-import java.nio.charset.Charset;
 import java.util.concurrent.TimeUnit;
-import java.util.stream.Collectors;
-import java.util.stream.IntStream;
 
 import org.apache.commons.io.input.Tailer;
 import org.apache.commons.io.input.TailerListener;
 
-import com.google.inject.Inject;
 import com.skillbill.at.akka.dto.HttpEndPointConfiuration;
 import com.skillbill.at.akka.dto.HttpEndPointFailed;
+import com.skillbill.at.akka.dto.KafkaEndPointConfiuration;
 import com.skillbill.at.akka.dto.NewLineEvent;
 import com.skillbill.at.guice.GuiceAbstractActor;
 import com.skillbill.at.guice.GuiceActorUtils;
+import com.typesafe.config.Config;
 
 import akka.actor.ActorRef;
 import akka.actor.OneForOneStrategy;
@@ -38,24 +36,25 @@ public class TailerActor extends GuiceAbstractActor implements TailerListener  {
 	private static final boolean FROM_END = true;
 	private static final boolean RE_OPEN = true;
 	
+	private File resource;
 	private Router router;
-	private final File resource;	
+//	private Config config;	
 
-	@Inject
-	public TailerActor() {
-		resource = new File("/Users/power/Tmp/a");
-		
-		Tailer.create(
-			resource, Charset.forName("UTF-8"), this, DELAY, FROM_END, RE_OPEN, BUFFER_SIZE
-		);		
-									
-		router = new Router(
-			new BroadcastRoutingLogic(),			
-			IntStream.range(1, 2)
-				.mapToObj(ic -> buildHttpActor(new HttpEndPointConfiuration("http://localhost:8888")))
-				.collect(Collectors.toList())			
-		);	
-	}
+//	@Inject
+//	public TailerActor() {
+//		resource = new File("/Users/power/Tmp/a");
+//		
+//		Tailer.create(
+//			resource, Charset.forName("UTF-8"), this, DELAY, FROM_END, RE_OPEN, BUFFER_SIZE
+//		);		
+//									
+//		router = new Router(
+//			new BroadcastRoutingLogic(),			
+//			IntStream.range(1, 2)
+//				.mapToObj(ic -> buildHttpActor(new HttpEndPointConfiuration("http://localhost:8888")))
+//				.collect(Collectors.toList())			
+//		);	
+//	}
 
 	private Routee buildHttpActor(HttpEndPointConfiuration conf) {
 		
@@ -72,19 +71,34 @@ public class TailerActor extends GuiceAbstractActor implements TailerListener  {
 		return new ActorRefRoutee(actor);
 	}
 
-//	@Override
-//	public void postStop() throws Exception {
-//		super.postStop();
-//		
-//		LOGGER.info("############################################ " + getSelf().path());
-//	}
+	private Routee buildKafkaActor(KafkaEndPointConfiuration conf) {
+		
+		//create
+		final ActorRef actor = getContext().actorOf(
+			GuiceActorUtils.makeProps(getContext().system(), KafkaEndpointActor.class)
+		);
+		
+		//configure
+		actor.tell(conf, ActorRef.noSender());
+					
+		getContext().watch(actor); //to see Terminated event associated with this actor
+		
+		return new ActorRefRoutee(actor);
+	}
 	
-//	@Override
-//	public void preStart() throws Exception {
-//		super.preStart();
-//		
-//		LOGGER.info("**************************************** " + getSelf().path());
-//	}
+	@Override
+	public void postStop() throws Exception {
+		super.postStop();
+		
+		LOGGER.info("############################################ " + getSelf().path());
+	}
+	
+	@Override
+	public void preStart() throws Exception {
+		super.preStart();
+		
+		LOGGER.info("**************************************** " + getSelf().path());
+	}
 
 	@Override
 	public Receive createReceive() {
@@ -109,6 +123,25 @@ public class TailerActor extends GuiceAbstractActor implements TailerListener  {
 					//LOGGER.info("NOT expired {}", f);
 					getSelf().tell(f, ActorRef.noSender()); //NOT GOOD IDEA ... PLEASE REMOVE ME ASAP !!?
 				}
+			})
+			.match(Config.class, c -> {
+				//config = c;
+				
+				resource = new File(c.getString("path"));
+				
+				router = new Router(new BroadcastRoutingLogic());				
+				
+				final Config httpConfig = c.getObject("http").toConfig();
+				final Config kafkaConfig = c.getObject("kafka").toConfig();
+				
+				if (!httpConfig.isEmpty()) {
+					router = router.addRoutee(buildHttpActor(null));
+				}
+				
+				if (!kafkaConfig.isEmpty()) {
+					router = router.addRoutee(buildKafkaActor(null));
+				}
+								
 			})
 			.matchAny(o -> {
 				LOGGER.warn("not handled message", o);
