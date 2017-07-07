@@ -2,7 +2,6 @@ package com.skillbill.at;
 
 import com.google.inject.Injector;
 import com.skillbill.at.akka.ExportsManagerActor;
-import com.skillbill.at.akka.TailerActor;
 import com.skillbill.at.guice.GuiceActorUtils;
 import com.skillbill.at.guice.GuiceExtension;
 import com.skillbill.at.guice.GuiceExtensionImpl;
@@ -49,7 +48,6 @@ public class KileBeatApplication {
         LOGGER.info("-------------------------------------------------");
         LOGGER.info(" KileBeat STARTED");
         LOGGER.info("-------------------------------------------------");
-
 
     }
 }

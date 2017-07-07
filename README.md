@@ -5,4 +5,4 @@ For the first release with support only two connector
 - generic http (JSON over POST)
 - kafka 
 
-We also support stop and resume of endpoint connector
+We also support stop and resume of endpoint connector (losing all messages in the period when server connector's was down)
