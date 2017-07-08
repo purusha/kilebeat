@@ -3,12 +3,11 @@ package com.skillbill.at.akka.dto;
 import org.apache.commons.lang3.StringUtils;
 
 public class KafkaEndPointConfiuration {
-
 	private String queue;
 	private String url;
 
 	public KafkaEndPointConfiuration(String queue) {
-		String[] split = StringUtils.split(queue, "@");
+		final String[] split = StringUtils.split(queue, "@");
 		
 		this.url = split[0];
 		this.queue = split[1];
@@ -21,5 +20,4 @@ public class KafkaEndPointConfiuration {
 	public String getQueue() {
 		return queue;
 	}
-
 }

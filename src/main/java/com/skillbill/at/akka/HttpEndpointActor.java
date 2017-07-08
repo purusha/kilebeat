@@ -25,7 +25,7 @@ public class HttpEndpointActor extends GuiceAbstractActor {
 	private HttpEndPointConfiuration conf;
 	
 	@Inject
-	public HttpEndpointActor() {				
+	public HttpEndpointActor() {
         final ClientConfig cc = new DefaultClientConfig();  
         cc.getFeatures().put(JSONConfiguration.FEATURE_POJO_MAPPING, Boolean.TRUE);
         cc.getSingletons().add(new JacksonJsonProvider());
@@ -46,7 +46,7 @@ public class HttpEndpointActor extends GuiceAbstractActor {
 	public void postStop() throws Exception {
 		super.postStop();
 		
-		LOGGER.info("############################################ " + getSelf().path());
+		LOGGER.info("end {} ", getSelf().path());
 		
 		getContext().parent().tell(new HttpEndPointFailed(conf), ActorRef.noSender());
 	}
@@ -55,7 +55,7 @@ public class HttpEndpointActor extends GuiceAbstractActor {
 	public void preStart() throws Exception {
 		super.preStart();
 		
-		LOGGER.info("**************************************** " + getSelf().path());
+		LOGGER.info("start {} with parent ", getSelf().path(), getContext().parent());
 	}
 
 	private ClientResponse send(NewLineEvent s) {

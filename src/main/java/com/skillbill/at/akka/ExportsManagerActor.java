@@ -1,10 +1,15 @@
 package com.skillbill.at.akka;
 
+import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
+import java.util.concurrent.TimeUnit;
 
 import com.google.inject.Inject;
+import com.skillbill.at.akka.dto.ConfigurationFailed;
+import com.skillbill.at.akka.dto.HttpEndPointFailed;
+import com.skillbill.at.akka.dto.KafkaEndPointFailed;
 import com.skillbill.at.guice.GuiceAbstractActor;
 import com.skillbill.at.guice.GuiceActorUtils;
 import com.typesafe.config.Config;
@@ -12,57 +17,100 @@ import com.typesafe.config.ConfigObject;
 
 import akka.actor.ActorRef;
 import akka.actor.ActorSystem;
-import akka.japi.pf.ReceiveBuilder;
 import lombok.extern.slf4j.Slf4j;
+import scala.concurrent.duration.FiniteDuration;
 
 @Slf4j
 public class ExportsManagerActor extends GuiceAbstractActor {
-	
-	private final Config config;
-	
-	private final Map<ActorRef, Config> association;
+		
+	private final Map<ActorRef, List<ConfigurationFailed>> association;
 
 	@Inject
+	@SuppressWarnings("unchecked")
 	public ExportsManagerActor(Config config) {
-		this.config = config;		
 		this.association = new HashMap<>();
-	}
-	
-	@Override
-	public void postStop() throws Exception {
-		super.postStop();
-		
-		LOGGER.info("############################################ " + getSelf().path());
-	}
-	
-	@Override
-	public void preStart() throws Exception {
-		super.preStart();
-		
-		LOGGER.info("**************************************** " + getSelf().path());
 		
 		final ActorSystem system = getContext().system();
 		
 		((List<ConfigObject>) config.getObjectList("exports")).forEach(obj -> {
 			final Config c = obj.toConfig();			
 			
-			//create
-			final ActorRef actorOf = system.actorOf(
+			//create all my child
+			final ActorRef actorOf = getContext().actorOf(
 				GuiceActorUtils.makeProps(system, TailerActor.class)
 			);
 			
 			//configure
 			actorOf.tell(c, ActorRef.noSender());
-			
-			//TODO watch actorOf ??
-			
-			association.put(actorOf, c);						
 		});						
+	
+		getContext().system().scheduler().schedule(
+			FiniteDuration.create(10, TimeUnit.SECONDS), 
+			FiniteDuration.create(10, TimeUnit.SECONDS), 
+			getSelf(), new SchedulationsCheck(), 
+			getContext().system().dispatcher(), getSelf()
+		);		
+	}
+	
+	@Override
+	public void postStop() throws Exception {
+		super.postStop();
+		
+		LOGGER.info("end {} ", getSelf().path());
+	}
+	
+	@Override
+	public void preStart() throws Exception {
+		super.preStart();
+		
+		LOGGER.info("start {} with parent ", getSelf().path(), getContext().parent());
 	}
 	
 	@Override
 	public Receive createReceive() {
-		return ReceiveBuilder.create().build();
+		return receiveBuilder()
+			.match(HttpEndPointFailed.class, f -> {			
+				getFailed(getSender()).add(f);
+				
+				//LOGGER.info("### HttpEndPointFailed ### {}", association);
+			})
+			.match(KafkaEndPointFailed.class, f -> {
+				getFailed(getSender()).add(f);
+				
+				//LOGGER.info("### KafkaEndPointFailed ### {}", association);
+			})
+			.match(SchedulationsCheck.class, sc -> {	
+				LOGGER.info("### chec ### {}", association);
+				
+				association.keySet().forEach(childActor -> {						
+					final List<ConfigurationFailed> actorFails = association.get(childActor);
+					LOGGER.info("found failed conf {} for {}", actorFails.size(), childActor);
+					
+					for(int i = 0; i < actorFails.size(); i++) {						
+						final ConfigurationFailed configuration = actorFails.get(i);
+						
+						if (configuration.isExpired()) {														
+							childActor.tell(configuration, ActorRef.noSender());
+							actorFails.remove(i);
+						}						
+					}
+					
+					//TODO remove key if actorFails.isEmpty!!
+				});				
+			})
+			.matchAny(o -> {
+				LOGGER.warn("not handled message", o);
+			})
+			.build();							
 	}
 
+	private List<ConfigurationFailed> getFailed(ActorRef sender) {
+		if (!association.containsKey(getSender())) {
+			association.put(sender, new ArrayList<>());
+		}
+		
+		return association.get(sender);
+	}
+
+	class SchedulationsCheck {}
 }

@@ -9,7 +9,6 @@ import java.util.concurrent.TimeUnit;
 import org.apache.commons.io.input.Tailer;
 import org.apache.commons.io.input.TailerListener;
 
-import com.google.inject.Inject;
 import com.skillbill.at.akka.dto.HttpEndPointConfiuration;
 import com.skillbill.at.akka.dto.HttpEndPointFailed;
 import com.skillbill.at.akka.dto.KafkaEndPointConfiuration;
@@ -41,23 +40,19 @@ public class TailerActor extends GuiceAbstractActor implements TailerListener  {
 	
 	private File resource;
 	private Router router;
-
-	@Inject
-	public TailerActor() {
-	}
-	
+		
 	@Override
 	public void postStop() throws Exception {
 		super.postStop();
 		
-		LOGGER.info("############################################ " + getSelf().path());
+		LOGGER.info("end {} ", getSelf().path());
 	}
 	
 	@Override
 	public void preStart() throws Exception {
 		super.preStart();
 		
-		LOGGER.info("**************************************** " + getSelf().path());
+		LOGGER.info("start {} with parent ", getSelf().path(), getContext().parent());
 	}
 
 	@Override
@@ -86,8 +81,8 @@ public class TailerActor extends GuiceAbstractActor implements TailerListener  {
 						)											
 					));
 				} else {
-					//LOGGER.info("NOT expired {}", f);
-					getSelf().tell(f, ActorRef.noSender()); //XXX NOT GOOD IDEA ... PLEASE REMOVE ME ASAP !!?
+					LOGGER.info("NOT expired {}", f);
+					getContext().parent().tell(f, getSelf());
 				}
 			})
 			.match(KafkaEndPointFailed.class, f -> {
@@ -100,29 +95,29 @@ public class TailerActor extends GuiceAbstractActor implements TailerListener  {
 						)						
 					));
 				} else {
-					//LOGGER.info("NOT expired {}", f);
-					getSelf().tell(f, ActorRef.noSender()); //XXX NOT GOOD IDEA ... PLEASE REMOVE ME ASAP !!?
+					LOGGER.info("NOT expired {}", f);
+					getContext().parent().tell(f, getSelf());
 				}
 			})
 			.match(Config.class, c -> {
 				resource = new File(c.getString("path"));				
 				router = new Router(new BroadcastRoutingLogic());				
 				
-				final Config httpConfig = c.getObject("http").toConfig();
-				final Config kafkaConfig = c.getObject("kafka").toConfig();
+				final Config httpConfig = c.hasPath("http") ? c.getObject("http").toConfig() : null;
+				final Config kafkaConfig = c.hasPath("kafka") ? c.getObject("kafka").toConfig() : null;
 				
-				if (!httpConfig.isEmpty()) {					
+				if (httpConfig != null && !httpConfig.isEmpty()) {					
 					router = router.addRoutee(buildRoutee(
-						new HttpEndPointConfiuration(httpConfig.getString("http.url")),
+						new HttpEndPointConfiuration(httpConfig.getString("url")),
 						getContext().actorOf(
 							GuiceActorUtils.makeProps(getContext().system(), HttpEndpointActor.class)
 						)																	
 					));
 				}
 				
-				if (!kafkaConfig.isEmpty()) {
+				if (kafkaConfig != null && !kafkaConfig.isEmpty()) {
 					router = router.addRoutee(buildRoutee(
-						new KafkaEndPointConfiuration(kafkaConfig.getString("kafka.queue")),
+						new KafkaEndPointConfiuration(kafkaConfig.getString("queue")),
 						getContext().actorOf(
 							GuiceActorUtils.makeProps(getContext().system(), KafkaEndpointActor.class)
 						)												

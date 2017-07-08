@@ -41,7 +41,6 @@ public class KileBeatApplication {
 //			);
         
         system.actorOf(
-    		//GuiceActorUtils.makeProps(system, TailerActor.class)
     		GuiceActorUtils.makeProps(system, ExportsManagerActor.class)
 		);
         

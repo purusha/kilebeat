@@ -6,8 +6,7 @@ import java.time.temporal.ChronoUnit;
 import lombok.ToString;
 
 @ToString
-public class KafkaEndPointFailed {
-
+public class KafkaEndPointFailed implements ConfigurationFailed {
 	private KafkaEndPointConfiuration conf;
 	private final LocalDateTime now;
 
@@ -16,12 +15,13 @@ public class KafkaEndPointFailed {
 		this.now = LocalDateTime.now();
 	}
 
+	@Override
 	public KafkaEndPointConfiuration getConf() {
 		return conf;
 	}
 
+	@Override
 	public boolean isExpired() {
 		return ChronoUnit.SECONDS.between(now, LocalDateTime.now()) > 60;
 	}	
-
 }

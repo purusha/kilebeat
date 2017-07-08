@@ -26,9 +26,8 @@ public class KafkaEndpointActor extends GuiceAbstractActor {
 	private KafkaEndPointConfiuration conf;
 	
 	@Inject
-	public KafkaEndpointActor() {		
-		
-        Properties configProperties = new Properties();
+	public KafkaEndpointActor() {				
+        final Properties configProperties = new Properties();
         configProperties.put(ProducerConfig.BOOTSTRAP_SERVERS_CONFIG,"localhost:9092");
         configProperties.put(ProducerConfig.KEY_SERIALIZER_CLASS_CONFIG,"org.apache.kafka.common.serialization.ByteArraySerializer");
         configProperties.put(ProducerConfig.VALUE_SERIALIZER_CLASS_CONFIG,"org.apache.kafka.common.serialization.StringSerializer");
@@ -36,8 +35,7 @@ public class KafkaEndpointActor extends GuiceAbstractActor {
         //inject me please !!?
         producer = new KafkaProducer<String, String>(configProperties);
         
-        om = new ObjectMapper();
-        
+        om = new ObjectMapper();        
 	}
 	
 	@Override
@@ -52,26 +50,27 @@ public class KafkaEndpointActor extends GuiceAbstractActor {
 	public void postStop() throws Exception {
 		super.postStop();
 		
-		LOGGER.info("############################################ " + getSelf().path());
+		LOGGER.info("end {} ", getSelf().path());
 		
 		producer.close();
 		
-		getContext().parent().tell(new KafkaEndPointFailed(conf), ActorRef.noSender());
+		getContext().parent().tell(new KafkaEndPointFailed(conf), ActorRef.noSender());		
 	}
 	
 	@Override
 	public void preStart() throws Exception {
 		super.preStart();
 		
-		LOGGER.info("**************************************** " + getSelf().path());
+		LOGGER.info("start {} with parent ", getSelf().path(), getContext().parent());
 	}
 
+	
 	private void send(NewLineEvent s) {
 		LOGGER.info("[row@{}] {}", getSelf().path(), s);
 		
 		try {
 			final RecordMetadata recordMetadata = producer.send(
-				new ProducerRecord<String, String>("topicName", om.writeValueAsString(s))
+				new ProducerRecord<String, String>(conf.getQueue(), om.writeValueAsString(s))
 			).get();
 			
 			long offset = recordMetadata.offset();			

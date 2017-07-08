@@ -15,11 +15,7 @@ public class AkkaModule implements Module {
 
 		final String property = System.getProperty("config.file");
 		final File file = new File(property);
-		
-//		if (!file.isAbsolute()) {
-//			throw new RuntimeException("config.file MUST be absoule");
-//		}
-		
+				
 		final ValidationResponse validResp = new ConfigurationValidator(file).isValid();
 		if (validResp.isValid()) {
 			throw new RuntimeException("config.file is INVALID");
