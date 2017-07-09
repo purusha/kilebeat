@@ -3,13 +3,13 @@ package com.skillbill.at.http;
 import java.util.concurrent.Callable;
 import java.util.function.Supplier;
 
-public class HttpRetryCommand {
+public class RetryCommand {
 	
 	private final int maxRetries;	
 	private final String path;
 	private int retryCounter;
 
-	public HttpRetryCommand(int maxRetries, String path) {
+	public RetryCommand(int maxRetries, String path) {
 		this.maxRetries = maxRetries;
 		this.path = path;
 	}

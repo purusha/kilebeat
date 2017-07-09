@@ -1,12 +1,12 @@
 package com.skillbill.at.akka;
 
 import java.util.Properties;
+import java.util.concurrent.Callable;
 
 import org.apache.kafka.clients.producer.KafkaProducer;
 import org.apache.kafka.clients.producer.Producer;
 import org.apache.kafka.clients.producer.ProducerConfig;
 import org.apache.kafka.clients.producer.ProducerRecord;
-import org.apache.kafka.clients.producer.RecordMetadata;
 
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.google.inject.Inject;
@@ -14,6 +14,7 @@ import com.skillbill.at.akka.dto.KafkaEndPointConfiuration;
 import com.skillbill.at.akka.dto.KafkaEndPointFailed;
 import com.skillbill.at.akka.dto.NewLineEvent;
 import com.skillbill.at.guice.GuiceAbstractActor;
+import com.skillbill.at.http.RetryCommand;
 
 import akka.actor.ActorRef;
 import lombok.extern.slf4j.Slf4j;
@@ -64,19 +65,24 @@ public class KafkaEndpointActor extends GuiceAbstractActor {
 		LOGGER.info("start {} with parent ", getSelf().path(), getContext().parent());
 	}
 
-	//XXX add retry please!!
 	private void send(NewLineEvent s) {
 		LOGGER.info("[row@{}] {}", getSelf().path(), s);
-		
-		try {
-			final RecordMetadata recordMetadata = producer.send(
-				new ProducerRecord<String, String>(conf.getQueue(), om.writeValueAsString(s))
-			).get();
-			
-			long offset = recordMetadata.offset();			
-			LOGGER.info("offset is {}", offset);			
-		} catch (Exception e) {
-			LOGGER.error("", e);
-		}		
+				
+		new RetryCommand(3, s.getPath()).run(new Callable<Void>() {						
+			@Override
+			public Void call() throws Exception {
+				try {
+					long offset = producer.send(
+						new ProducerRecord<String, String>(conf.getQueue(), om.writeValueAsString(s))
+					).get().offset();
+								
+					LOGGER.info("offset is {}", offset);
+				} catch (Exception e) {
+					throw new RuntimeException(e);
+				}
+
+				return null;
+			}		
+		});										
 	}		
 }	

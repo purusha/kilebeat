@@ -7,7 +7,7 @@ import com.skillbill.at.akka.dto.HttpEndPointConfiuration;
 import com.skillbill.at.akka.dto.HttpEndPointFailed;
 import com.skillbill.at.akka.dto.NewLineEvent;
 import com.skillbill.at.guice.GuiceAbstractActor;
-import com.skillbill.at.http.HttpRetryCommand;
+import com.skillbill.at.http.RetryCommand;
 import com.sun.jersey.api.client.Client;
 import com.sun.jersey.api.client.ClientResponse;
 import com.sun.jersey.api.client.WebResource;
@@ -61,7 +61,7 @@ public class HttpEndpointActor extends GuiceAbstractActor {
 	private ClientResponse send(NewLineEvent s) {
 		//LOGGER.info("[row@{}] {}", getSelf().path(), s);			
 		
-		return new HttpRetryCommand(3, s.getPath()).run(() -> {
+		return new RetryCommand(3, s.getPath()).run(() -> {
 			final WebResource resource = client.resource(conf.getPath());
 			
 			final ClientResponse response = resource
