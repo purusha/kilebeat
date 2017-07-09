@@ -14,10 +14,10 @@ public class AkkaModule implements Module {
 	public void configure(Binder binder) {
 
 		final String property = System.getProperty("config.file");
-		final File file = new File(property);
-				
+		final File file = new File(property);				
 		final ValidationResponse validResp = new ConfigurationValidator(file).isValid();
-		if (validResp.isValid()) {
+		
+		if (!validResp.isValid()) {
 			throw new RuntimeException("config.file is INVALID");
 		}
 		

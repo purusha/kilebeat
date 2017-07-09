@@ -40,12 +40,15 @@ public class TailerActor extends GuiceAbstractActor implements TailerListener  {
 	
 	private File resource;
 	private Router router;
+	private Tailer tailer;
 		
 	@Override
 	public void postStop() throws Exception {
 		super.postStop();
 		
 		LOGGER.info("end {} ", getSelf().path());
+		
+		tailer.stop();
 	}
 	
 	@Override
@@ -102,10 +105,9 @@ public class TailerActor extends GuiceAbstractActor implements TailerListener  {
 			.match(Config.class, c -> {
 				resource = new File(c.getString("path"));				
 				router = new Router(new BroadcastRoutingLogic());				
-				
-				final Config httpConfig = c.hasPath("http") ? c.getObject("http").toConfig() : null;
-				final Config kafkaConfig = c.hasPath("kafka") ? c.getObject("kafka").toConfig() : null;
-				
+
+				//DRY
+				final Config httpConfig = c.hasPath("http") ? c.getObject("http").toConfig() : null;								
 				if (httpConfig != null && !httpConfig.isEmpty()) {					
 					router = router.addRoutee(buildRoutee(
 						new HttpEndPointConfiuration(httpConfig.getString("url")),
@@ -115,6 +117,8 @@ public class TailerActor extends GuiceAbstractActor implements TailerListener  {
 					));
 				}
 				
+				//DRY				
+				final Config kafkaConfig = c.hasPath("kafka") ? c.getObject("kafka").toConfig() : null;
 				if (kafkaConfig != null && !kafkaConfig.isEmpty()) {
 					router = router.addRoutee(buildRoutee(
 						new KafkaEndPointConfiuration(kafkaConfig.getString("queue")),
@@ -124,7 +128,7 @@ public class TailerActor extends GuiceAbstractActor implements TailerListener  {
 					));
 				}		
 				
-				Tailer.create(
+				tailer = Tailer.create(
 					resource, Charset.forName("UTF-8"), this, DELAY, FROM_END, RE_OPEN, BUFFER_SIZE
 				);						
 			})
@@ -175,7 +179,7 @@ public class TailerActor extends GuiceAbstractActor implements TailerListener  {
 	}
 
 	private Routee buildRoutee(Object conf, ActorRef child) {		
-		child.tell(conf, ActorRef.noSender());//configure					
+		child.tell(conf, ActorRef.noSender()); //configure					
 		getContext().watch(child); //to see Terminated event associated with this actor
 		
 		return new ActorRefRoutee(child);		

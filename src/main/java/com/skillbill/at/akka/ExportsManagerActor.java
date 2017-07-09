@@ -35,20 +35,22 @@ public class ExportsManagerActor extends GuiceAbstractActor {
 		((List<ConfigObject>) config.getObjectList("exports")).forEach(obj -> {
 			final Config c = obj.toConfig();			
 			
-			//create all my child
+			//create child
 			final ActorRef actorOf = getContext().actorOf(
 				GuiceActorUtils.makeProps(system, TailerActor.class)
 			);
 			
 			//configure
 			actorOf.tell(c, ActorRef.noSender());
+			
+			//getContext().watch(actorOf);
 		});						
 	
-		getContext().system().scheduler().schedule(
+		system.scheduler().schedule(
 			FiniteDuration.create(10, TimeUnit.SECONDS), 
 			FiniteDuration.create(10, TimeUnit.SECONDS), 
 			getSelf(), new SchedulationsCheck(), 
-			getContext().system().dispatcher(), getSelf()
+			system.dispatcher(), getSelf()
 		);		
 	}
 	

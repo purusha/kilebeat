@@ -64,7 +64,7 @@ public class KafkaEndpointActor extends GuiceAbstractActor {
 		LOGGER.info("start {} with parent ", getSelf().path(), getContext().parent());
 	}
 
-	
+	//XXX add retry please!!
 	private void send(NewLineEvent s) {
 		LOGGER.info("[row@{}] {}", getSelf().path(), s);
 		
