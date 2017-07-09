@@ -55,7 +55,7 @@ public class TailerActor extends GuiceAbstractActor implements TailerListener  {
 	public void preStart() throws Exception {
 		super.preStart();
 		
-		LOGGER.info("start {} with parent ", getSelf().path(), getContext().parent());
+		LOGGER.info("start {} with parent {}", getSelf().path(), getContext().parent());
 	}
 
 	@Override

@@ -62,7 +62,7 @@ public class KafkaEndpointActor extends GuiceAbstractActor {
 	public void preStart() throws Exception {
 		super.preStart();
 		
-		LOGGER.info("start {} with parent ", getSelf().path(), getContext().parent());
+		LOGGER.info("start {} with parent {}", getSelf().path(), getContext().parent());
 	}
 
 	private void send(NewLineEvent s) {
