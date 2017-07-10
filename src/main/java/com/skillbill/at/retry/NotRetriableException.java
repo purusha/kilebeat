@@ -1,4 +1,4 @@
-package com.skillbill.at.http;
+package com.skillbill.at.retry;
 
 public class NotRetriableException extends RuntimeException {
 	private static final long serialVersionUID = -468433659750252949L;

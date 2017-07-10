@@ -7,7 +7,7 @@ import com.skillbill.at.akka.dto.HttpEndPointConfiuration;
 import com.skillbill.at.akka.dto.HttpEndPointFailed;
 import com.skillbill.at.akka.dto.NewLineEvent;
 import com.skillbill.at.guice.GuiceAbstractActor;
-import com.skillbill.at.http.RetryCommand;
+import com.skillbill.at.retry.RetryCommand;
 import com.sun.jersey.api.client.Client;
 import com.sun.jersey.api.client.ClientResponse;
 import com.sun.jersey.api.client.WebResource;

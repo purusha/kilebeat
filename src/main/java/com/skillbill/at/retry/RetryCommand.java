@@ -1,4 +1,4 @@
-package com.skillbill.at.http;
+package com.skillbill.at.retry;
 
 import java.util.concurrent.Callable;
 import java.util.function.Supplier;

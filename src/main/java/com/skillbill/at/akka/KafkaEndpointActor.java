@@ -14,7 +14,7 @@ import com.skillbill.at.akka.dto.KafkaEndPointConfiuration;
 import com.skillbill.at.akka.dto.KafkaEndPointFailed;
 import com.skillbill.at.akka.dto.NewLineEvent;
 import com.skillbill.at.guice.GuiceAbstractActor;
-import com.skillbill.at.http.RetryCommand;
+import com.skillbill.at.retry.RetryCommand;
 
 import akka.actor.ActorRef;
 import lombok.extern.slf4j.Slf4j;
