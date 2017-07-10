@@ -249,44 +249,4 @@
             </plugin>
         </plugins>
     </build>
-
-    <repositories>
-        <repository>
-            <id>repository.tomatowin.local-nexus</id>
-            <name>repository.tomatowin.local-nexus</name>
-            <url>http://repository.tomatowin.local/nexus/content/groups/public/</url>
-            <releases>
-                <enabled>true</enabled>
-            </releases>
-            <snapshots>
-                <enabled>true</enabled>
-            </snapshots>
-        </repository>
-    </repositories>
-    <pluginRepositories>
-        <pluginRepository>
-            <id>repository.tomatowin.local-nexus</id>
-            <name>repository.tomatowin.local-nexus</name>
-            <url>http://repository.tomatowin.local/nexus/content/groups/public/</url>
-            <releases>
-                <enabled>true</enabled>
-            </releases>
-            <snapshots>
-                <enabled>true</enabled>
-            </snapshots>
-        </pluginRepository>
-    </pluginRepositories>
-    <distributionManagement>
-        <repository>
-            <id>repository.tomatowin.local-nexus</id>
-            <name>repository.tomatowin.local-nexus nexus</name>
-            <url>http://repository.tomatowin.local/nexus/content/repositories/releases</url>
-        </repository>
-        <snapshotRepository>
-            <id>repository.tomatowin.local-nexus</id>
-            <name>repository.tomatowin.local-nexus</name>
-            <url>http://repository.tomatowin.local/nexus/content/repositories/snapshots</url>
-            <uniqueVersion>false</uniqueVersion>
-        </snapshotRepository>
-    </distributionManagement>
 </project>
