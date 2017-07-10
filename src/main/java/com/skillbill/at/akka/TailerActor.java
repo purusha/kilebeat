@@ -180,7 +180,7 @@ public class TailerActor extends GuiceAbstractActor implements TailerListener  {
 
 	private Routee buildRoutee(Object conf, ActorRef child) {		
 		child.tell(conf, ActorRef.noSender()); //configure					
-		getContext().watch(child); //to see Terminated event associated with this actor
+		getContext().watch(child); //to see Terminated event associated with 'child' actor
 		
 		return new ActorRefRoutee(child);		
 	}	

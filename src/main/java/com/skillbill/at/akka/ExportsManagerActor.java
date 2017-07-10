@@ -4,7 +4,9 @@ import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
+import java.util.Set;
 import java.util.concurrent.TimeUnit;
+import java.util.stream.Collectors;
 
 import com.google.inject.Inject;
 import com.skillbill.at.akka.dto.ConfigurationFailed;
@@ -17,13 +19,16 @@ import com.typesafe.config.ConfigObject;
 
 import akka.actor.ActorRef;
 import akka.actor.ActorSystem;
+import akka.actor.Cancellable;
 import lombok.extern.slf4j.Slf4j;
 import scala.concurrent.duration.FiniteDuration;
 
 @Slf4j
-public class ExportsManagerActor extends GuiceAbstractActor {
+public class ExportsManagerActor extends GuiceAbstractActor {	
+	private final static String SCHEDULATION_CHECK = "SchedulationsCheck";
 		
 	private final Map<ActorRef, List<ConfigurationFailed>> association;
+	private final Cancellable schedule;
 
 	@Inject
 	@SuppressWarnings("unchecked")
@@ -46,10 +51,10 @@ public class ExportsManagerActor extends GuiceAbstractActor {
 			//getContext().watch(actorOf);
 		});						
 	
-		system.scheduler().schedule(
+		schedule = system.scheduler().schedule(
 			FiniteDuration.create(10, TimeUnit.SECONDS), 
 			FiniteDuration.create(10, TimeUnit.SECONDS), 
-			getSelf(), new SchedulationsCheck(), 
+			getSelf(), SCHEDULATION_CHECK, 
 			system.dispatcher(), getSelf()
 		);		
 	}
@@ -59,6 +64,8 @@ public class ExportsManagerActor extends GuiceAbstractActor {
 		super.postStop();
 		
 		LOGGER.info("end {} ", getSelf().path());
+		
+		schedule.cancel();
 	}
 	
 	@Override
@@ -81,12 +88,14 @@ public class ExportsManagerActor extends GuiceAbstractActor {
 				
 				//LOGGER.info("### KafkaEndPointFailed ### {}", association);
 			})
-			.match(SchedulationsCheck.class, sc -> {	
+			.matchEquals(SCHEDULATION_CHECK, sc -> {	
 				LOGGER.info("### chec ### {}", association);
 				
-				association.keySet().forEach(childActor -> {						
+				final Set<ActorRef> actorRefs = association.keySet();
+				
+				actorRefs.forEach(childActor -> {						
 					final List<ConfigurationFailed> actorFails = association.get(childActor);
-					LOGGER.info("found failed conf {} for {}", actorFails.size(), childActor);
+					LOGGER.info("found {} failed conf for {}", actorFails.size(), childActor);
 					
 					for(int i = 0; i < actorFails.size(); i++) {						
 						final ConfigurationFailed configuration = actorFails.get(i);
@@ -96,9 +105,12 @@ public class ExportsManagerActor extends GuiceAbstractActor {
 							actorFails.remove(i);
 						}						
 					}
-					
-					//TODO remove key if actorFails.isEmpty!!
-				});				
+				});
+				
+				//remove key's without values!!
+				actorRefs.removeAll(
+					actorRefs.stream().filter(childActor -> association.get(childActor).isEmpty()).collect(Collectors.toList())
+				);
 			})
 			.matchAny(o -> {
 				LOGGER.warn("not handled message", o);
@@ -113,6 +125,4 @@ public class ExportsManagerActor extends GuiceAbstractActor {
 		
 		return association.get(sender);
 	}
-
-	class SchedulationsCheck {}
 }

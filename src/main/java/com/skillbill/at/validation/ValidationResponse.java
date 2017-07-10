@@ -1,4 +1,4 @@
-package com.skillbill.at;
+package com.skillbill.at.validation;
 
 import java.util.ArrayList;
 import java.util.HashMap;

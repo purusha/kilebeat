@@ -48,6 +48,8 @@ public class HttpEndpointActor extends GuiceAbstractActor {
 		
 		LOGGER.info("end {} ", getSelf().path());
 		
+		client.destroy();
+		
 		getContext().parent().tell(new HttpEndPointFailed(conf), ActorRef.noSender());
 	}
 	

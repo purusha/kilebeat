@@ -4,9 +4,7 @@ import com.google.inject.Injector;
 
 import akka.actor.Actor;
 import akka.actor.IndirectActorProducer;
-import lombok.extern.slf4j.Slf4j;
 
-@Slf4j
 public class GuiceActorProducer implements IndirectActorProducer {
     private final Injector injector;
     private Class<? extends Actor> actorClass;

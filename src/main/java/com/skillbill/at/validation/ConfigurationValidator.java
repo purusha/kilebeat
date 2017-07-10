@@ -1,4 +1,4 @@
-package com.skillbill.at;
+package com.skillbill.at.validation;
 
 import java.io.File;
 import java.util.List;

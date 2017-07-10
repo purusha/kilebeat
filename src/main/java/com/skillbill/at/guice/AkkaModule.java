@@ -4,8 +4,8 @@ import java.io.File;
 
 import com.google.inject.Binder;
 import com.google.inject.Module;
-import com.skillbill.at.ConfigurationValidator;
-import com.skillbill.at.ValidationResponse;
+import com.skillbill.at.validation.ConfigurationValidator;
+import com.skillbill.at.validation.ValidationResponse;
 import com.typesafe.config.Config;
 
 public class AkkaModule implements Module {
