@@ -4,7 +4,7 @@ import org.codehaus.jackson.jaxrs.JacksonJsonProvider;
 
 import com.google.inject.Inject;
 import com.skillbill.at.akka.dto.HttpEndPointConfiuration;
-import com.skillbill.at.akka.dto.HttpEndPointFailed;
+import com.skillbill.at.akka.dto.EndPointFailed;
 import com.skillbill.at.akka.dto.NewLineEvent;
 import com.skillbill.at.guice.GuiceAbstractActor;
 import com.skillbill.at.retry.RetryCommand;
@@ -50,7 +50,7 @@ public class HttpEndpointActor extends GuiceAbstractActor {
 		
 		client.destroy();
 		
-		getContext().parent().tell(new HttpEndPointFailed(conf), ActorRef.noSender());
+		getContext().parent().tell(new EndPointFailed(conf), ActorRef.noSender());
 	}
 	
 	@Override

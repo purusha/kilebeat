@@ -9,10 +9,9 @@ import java.util.concurrent.TimeUnit;
 import org.apache.commons.io.input.Tailer;
 import org.apache.commons.io.input.TailerListener;
 
+import com.skillbill.at.akka.dto.EndPointFailed;
 import com.skillbill.at.akka.dto.HttpEndPointConfiuration;
-import com.skillbill.at.akka.dto.HttpEndPointFailed;
 import com.skillbill.at.akka.dto.KafkaEndPointConfiuration;
-import com.skillbill.at.akka.dto.KafkaEndPointFailed;
 import com.skillbill.at.akka.dto.NewLineEvent;
 import com.skillbill.at.guice.GuiceAbstractActor;
 import com.skillbill.at.guice.GuiceActorUtils;
@@ -31,8 +30,7 @@ import lombok.extern.slf4j.Slf4j;
 import scala.concurrent.duration.Duration;
 
 @Slf4j
-public class TailerActor extends GuiceAbstractActor implements TailerListener  {	
-	
+public class TailerActor extends GuiceAbstractActor implements TailerListener {		
 	private static final int DELAY = 50;
 	private static final int BUFFER_SIZE = 1000;
 	private static final boolean FROM_END = true;
@@ -73,29 +71,15 @@ public class TailerActor extends GuiceAbstractActor implements TailerListener  {
 				getContext().unwatch(fail);				
 				router = router.removeRoutee(fail);																			
 			})
-			.match(HttpEndPointFailed.class, f -> {
+			.match(EndPointFailed.class, f -> {
 				if (f.isExpired()) {
 					LOGGER.info("expired {}", f);
 										
 					router = router.addRoutee(buildRoutee(
 						f.getConf(),
 						getContext().actorOf(
-							GuiceActorUtils.makeProps(getContext().system(), HttpEndpointActor.class)
+							GuiceActorUtils.makeProps(getContext().system(), f.isHttp() ? HttpEndpointActor.class : KafkaEndpointActor.class)
 						)											
-					));
-				} else {
-					LOGGER.info("NOT expired {}", f);
-					getContext().parent().tell(f, getSelf());
-				}
-			})
-			.match(KafkaEndPointFailed.class, f -> {
-				if (f.isExpired()) {
-					LOGGER.info("expired {}", f);
-					router = router.addRoutee(buildRoutee(
-						f.getConf(),
-						getContext().actorOf(
-							GuiceActorUtils.makeProps(getContext().system(), KafkaEndpointActor.class)
-						)						
 					));
 				} else {
 					LOGGER.info("NOT expired {}", f);

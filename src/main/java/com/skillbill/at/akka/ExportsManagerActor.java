@@ -9,9 +9,7 @@ import java.util.concurrent.TimeUnit;
 import java.util.stream.Collectors;
 
 import com.google.inject.Inject;
-import com.skillbill.at.akka.dto.ConfigurationFailed;
-import com.skillbill.at.akka.dto.HttpEndPointFailed;
-import com.skillbill.at.akka.dto.KafkaEndPointFailed;
+import com.skillbill.at.akka.dto.EndPointFailed;
 import com.skillbill.at.guice.GuiceAbstractActor;
 import com.skillbill.at.guice.GuiceActorUtils;
 import com.typesafe.config.Config;
@@ -27,7 +25,7 @@ import scala.concurrent.duration.FiniteDuration;
 public class ExportsManagerActor extends GuiceAbstractActor {	
 	private final static String SCHEDULATION_CHECK = "SchedulationsCheck";
 		
-	private final Map<ActorRef, List<ConfigurationFailed>> association;
+	private final Map<ActorRef, List<EndPointFailed>> association;
 	private final Cancellable schedule;
 
 	@Inject
@@ -78,15 +76,8 @@ public class ExportsManagerActor extends GuiceAbstractActor {
 	@Override
 	public Receive createReceive() {
 		return receiveBuilder()
-			.match(HttpEndPointFailed.class, f -> {			
+			.match(EndPointFailed.class, f -> {			
 				getFailed(getSender()).add(f);
-				
-				//LOGGER.info("### HttpEndPointFailed ### {}", association);
-			})
-			.match(KafkaEndPointFailed.class, f -> {
-				getFailed(getSender()).add(f);
-				
-				//LOGGER.info("### KafkaEndPointFailed ### {}", association);
 			})
 			.matchEquals(SCHEDULATION_CHECK, sc -> {	
 				LOGGER.info("### chec ### {}", association);
@@ -94,11 +85,11 @@ public class ExportsManagerActor extends GuiceAbstractActor {
 				final Set<ActorRef> actorRefs = association.keySet();
 				
 				actorRefs.forEach(childActor -> {						
-					final List<ConfigurationFailed> actorFails = association.get(childActor);
+					final List<EndPointFailed> actorFails = association.get(childActor);
 					LOGGER.info("found {} failed conf for {}", actorFails.size(), childActor);
 					
 					for(int i = 0; i < actorFails.size(); i++) {						
-						final ConfigurationFailed configuration = actorFails.get(i);
+						final EndPointFailed configuration = actorFails.get(i);
 						
 						if (configuration.isExpired()) {														
 							childActor.tell(configuration, ActorRef.noSender());
@@ -118,7 +109,7 @@ public class ExportsManagerActor extends GuiceAbstractActor {
 			.build();							
 	}
 
-	private List<ConfigurationFailed> getFailed(ActorRef sender) {
+	private List<EndPointFailed> getFailed(ActorRef sender) {
 		if (!association.containsKey(getSender())) {
 			association.put(sender, new ArrayList<>());
 		}

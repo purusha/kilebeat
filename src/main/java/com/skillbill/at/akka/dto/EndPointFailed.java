@@ -6,22 +6,28 @@ import java.time.temporal.ChronoUnit;
 import lombok.ToString;
 
 @ToString
-public class HttpEndPointFailed implements ConfigurationFailed {
-	private final HttpEndPointConfiuration conf;
+public class EndPointFailed {
+	private final Object conf;
 	private final LocalDateTime now; 
 
-	public HttpEndPointFailed(HttpEndPointConfiuration conf) {
+	public EndPointFailed(Object conf) {
 		this.conf = conf;
 		this.now = LocalDateTime.now();
 	}
 
-	@Override
-	public HttpEndPointConfiuration getConf() {
+	public Object getConf() {
 		return conf;
 	}
 
-	@Override
 	public boolean isExpired() {
 		return ChronoUnit.SECONDS.between(now, LocalDateTime.now()) > 60;
+	}
+	
+	public boolean isHttp() {
+		return conf instanceof HttpEndPointConfiuration;
+	}
+	
+	public boolean isKafka() {
+		return conf instanceof KafkaEndPointConfiuration;
 	}
 }

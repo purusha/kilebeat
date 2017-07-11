@@ -10,8 +10,8 @@ import org.apache.kafka.clients.producer.ProducerRecord;
 
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.google.inject.Inject;
+import com.skillbill.at.akka.dto.EndPointFailed;
 import com.skillbill.at.akka.dto.KafkaEndPointConfiuration;
-import com.skillbill.at.akka.dto.KafkaEndPointFailed;
 import com.skillbill.at.akka.dto.NewLineEvent;
 import com.skillbill.at.guice.GuiceAbstractActor;
 import com.skillbill.at.retry.RetryCommand;
@@ -55,7 +55,7 @@ public class KafkaEndpointActor extends GuiceAbstractActor {
 		
 		producer.close();
 		
-		getContext().parent().tell(new KafkaEndPointFailed(conf), ActorRef.noSender());		
+		getContext().parent().tell(new EndPointFailed(conf), ActorRef.noSender());		
 	}
 	
 	@Override
