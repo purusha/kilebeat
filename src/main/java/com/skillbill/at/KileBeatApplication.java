@@ -41,7 +41,7 @@ public class KileBeatApplication {
 //			);
         
         system.actorOf(
-    		GuiceActorUtils.makeProps(system, ExportsManagerActor.class)
+    		GuiceActorUtils.makeProps(system, ExportsManagerActor.class), "manager"
 		);
         
         LOGGER.info("-------------------------------------------------");

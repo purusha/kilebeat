@@ -40,7 +40,7 @@ public class ExportsManagerActor extends GuiceAbstractActor {
 			
 			//create child
 			final ActorRef actorOf = getContext().actorOf(
-				GuiceActorUtils.makeProps(system, TailerActor.class)
+				GuiceActorUtils.makeProps(system, TailerActor.class), "tailer" + c.hashCode()
 			);
 			
 			//configure
@@ -110,7 +110,7 @@ public class ExportsManagerActor extends GuiceAbstractActor {
 	}
 
 	private List<EndPointFailed> getFailed(ActorRef sender) {
-		if (!association.containsKey(getSender())) {
+		if (!association.containsKey(sender)) {
 			association.put(sender, new ArrayList<>());
 		}
 		

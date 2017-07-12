@@ -78,7 +78,8 @@ public class TailerActor extends GuiceAbstractActor implements TailerListener {
 					router = router.addRoutee(buildRoutee(
 						f.getConf(),
 						getContext().actorOf(
-							GuiceActorUtils.makeProps(getContext().system(), f.isHttp() ? HttpEndpointActor.class : KafkaEndpointActor.class)
+							GuiceActorUtils.makeProps(getContext().system(), f.isHttp() ? HttpEndpointActor.class : KafkaEndpointActor.class),
+							(f.isHttp() ? "http" : "kafka") + f.getConf().hashCode()
 						)											
 					));
 				} else {
@@ -93,10 +94,12 @@ public class TailerActor extends GuiceAbstractActor implements TailerListener {
 				//DRY
 				final Config httpConfig = c.hasPath("http") ? c.getObject("http").toConfig() : null;								
 				if (httpConfig != null && !httpConfig.isEmpty()) {					
+					final HttpEndPointConfiuration conf = new HttpEndPointConfiuration(httpConfig.getString("url"));
 					router = router.addRoutee(buildRoutee(
-						new HttpEndPointConfiuration(httpConfig.getString("url")),
+						conf,
 						getContext().actorOf(
-							GuiceActorUtils.makeProps(getContext().system(), HttpEndpointActor.class)
+							GuiceActorUtils.makeProps(getContext().system(), HttpEndpointActor.class),
+							"http" + conf.hashCode()
 						)																	
 					));
 				}
@@ -104,10 +107,12 @@ public class TailerActor extends GuiceAbstractActor implements TailerListener {
 				//DRY				
 				final Config kafkaConfig = c.hasPath("kafka") ? c.getObject("kafka").toConfig() : null;
 				if (kafkaConfig != null && !kafkaConfig.isEmpty()) {
+					KafkaEndPointConfiuration conf = new KafkaEndPointConfiuration(kafkaConfig.getString("queue"));
 					router = router.addRoutee(buildRoutee(
-						new KafkaEndPointConfiuration(kafkaConfig.getString("queue")),
+						conf,
 						getContext().actorOf(
-							GuiceActorUtils.makeProps(getContext().system(), KafkaEndpointActor.class)
+							GuiceActorUtils.makeProps(getContext().system(), KafkaEndpointActor.class),
+							"kafka" + conf.hashCode()
 						)												
 					));
 				}		
