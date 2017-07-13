@@ -50,24 +50,19 @@ public class KafkaEndpointActor extends GuiceAbstractActor {
 	@Override
 	public void postStop() throws Exception {
 		super.postStop();
-		
 		LOGGER.info("end {} ", getSelf().path());
 		
 		producer.close();
-		
 		getContext().parent().tell(new EndPointFailed(conf), ActorRef.noSender());		
 	}
 	
 	@Override
 	public void preStart() throws Exception {
 		super.preStart();
-		
 		LOGGER.info("start {} with parent {}", getSelf().path(), getContext().parent());
 	}
 
 	private void send(NewLineEvent s) {
-		LOGGER.info("[row@{}] {}", getSelf().path(), s);
-				
 		new RetryCommand(3, s.getPath()).run(new Callable<Void>() {						
 			@Override
 			public Void call() throws Exception {				

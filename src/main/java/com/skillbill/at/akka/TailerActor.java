@@ -43,7 +43,6 @@ public class TailerActor extends GuiceAbstractActor implements TailerListener {
 	@Override
 	public void postStop() throws Exception {
 		super.postStop();
-		
 		LOGGER.info("end {} ", getSelf().path());
 		
 		tailer.stop();
@@ -52,7 +51,6 @@ public class TailerActor extends GuiceAbstractActor implements TailerListener {
 	@Override
 	public void preStart() throws Exception {
 		super.preStart();
-		
 		LOGGER.info("start {} with parent {}", getSelf().path(), getContext().parent());
 	}
 
@@ -128,16 +126,13 @@ public class TailerActor extends GuiceAbstractActor implements TailerListener {
 	}
 
 	@Override
-	public void init(Tailer tailer) {
-	}
+	public void init(Tailer tailer) { } /* avoid interface segregation pplease !!? */
 
 	@Override
-	public void fileNotFound() {
-	}
+	public void fileNotFound() { } /* avoid interface segregation pplease !!? */
 
 	@Override
-	public void fileRotated() {
-	}
+	public void fileRotated() { } /* avoid interface segregation pplease !!? */
 
 	@Override
 	public void handle(String line) {				

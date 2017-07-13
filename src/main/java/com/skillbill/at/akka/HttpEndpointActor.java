@@ -44,25 +44,20 @@ public class HttpEndpointActor extends GuiceAbstractActor {
 	
 	@Override
 	public void postStop() throws Exception {
-		super.postStop();
-		
+		super.postStop();		
 		LOGGER.info("end {} ", getSelf().path());
 		
-		client.destroy();
-		
+		client.destroy();		
 		getContext().parent().tell(new EndPointFailed(conf), ActorRef.noSender());
 	}
 	
 	@Override
 	public void preStart() throws Exception {
-		super.preStart();
-		
+		super.preStart();		
 		LOGGER.info("start {} with parent {}", getSelf().path(), getContext().parent());
 	}
 
 	private ClientResponse send(NewLineEvent s) {
-		//LOGGER.info("[row@{}] {}", getSelf().path(), s);			
-		
 		return new RetryCommand(3, s.getPath()).run(() -> {
 			final WebResource resource = client.resource(conf.getPath());
 			

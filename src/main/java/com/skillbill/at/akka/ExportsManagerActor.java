@@ -43,8 +43,7 @@ public class ExportsManagerActor extends GuiceAbstractActor {
 	
 	@Override
 	public void postStop() throws Exception {
-		super.postStop();
-		
+		super.postStop();		
 		LOGGER.info("end {} ", getSelf().path());
 		
 		schedule.cancel();
@@ -52,8 +51,7 @@ public class ExportsManagerActor extends GuiceAbstractActor {
 	
 	@Override
 	public void preStart() throws Exception {
-		super.preStart();
-		
+		super.preStart();		
 		LOGGER.info("start {} with parent {}", getSelf().path(), getContext().parent());
 	}
 	

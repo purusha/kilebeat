@@ -1,7 +1,6 @@
 package com.skillbill.at.akka;
 
-import static java.nio.file.StandardWatchEventKinds.ENTRY_CREATE;
-import static java.nio.file.StandardWatchEventKinds.ENTRY_DELETE;
+import static java.nio.file.StandardWatchEventKinds.*;
 
 import java.io.File;
 import java.io.IOException;
@@ -41,12 +40,9 @@ public class FileSystemWatcherActor extends GuiceAbstractActor {
 		this.watcher = FileSystems.getDefault().newWatchService();
 		this.keys = new HashMap<>();
 		
-		final ActorSystem system = getContext().system();
-		
-		this.schedule = system.scheduler().scheduleOnce(
-			FiniteDuration.create(10, TimeUnit.SECONDS), 
-			getSelf(), SCHEDULATION_WATCH, 
-			system.dispatcher(), getSelf());
+		final ActorSystem system = getContext().system();		
+		this.schedule = system.scheduler().scheduleOnce(FiniteDuration.create(100, TimeUnit.SECONDS), 
+			getSelf(), SCHEDULATION_WATCH, system.dispatcher(), getSelf());
 		
 		((List<ConfigObject>) config.getObjectList("exports")).forEach(obj -> {
 			final Config c = obj.toConfig();			
@@ -67,7 +63,6 @@ public class FileSystemWatcherActor extends GuiceAbstractActor {
 	@Override
 	public void postStop() throws Exception {
 		super.postStop();
-		
 		LOGGER.info("end {} ", getSelf().path());
 		
 		watcher.close();
@@ -76,8 +71,7 @@ public class FileSystemWatcherActor extends GuiceAbstractActor {
 	
 	@Override
 	public void preStart() throws Exception {
-		super.preStart();
-		
+		super.preStart();		
 		LOGGER.info("start {} with parent {}", getSelf().path(), getContext().parent());
 	}
 	
@@ -97,23 +91,26 @@ public class FileSystemWatcherActor extends GuiceAbstractActor {
 				);
 			})
 			.matchEquals(SCHEDULATION_WATCH, sw -> {
-				LOGGER.info("### check new files");
-				final ActorSystem system = getContext().system();
+				final ActorSystem system = getContext().system();				
+				this.schedule = system.scheduler().scheduleOnce(FiniteDuration.create(100, TimeUnit.SECONDS), 
+					getSelf(), SCHEDULATION_WATCH, system.dispatcher(), getSelf());
+				
+				LOGGER.info("### check new files");				
 				
 				keys.keySet().forEach(wk -> {
+					LOGGER.info("watchKey is {}", wk);
+					
 					final List<WatchEvent<?>> pollEvents = wk.pollEvents();
+					LOGGER.info("found {} events", pollEvents.size());
 					
 					pollEvents.forEach(we -> {
 						Kind<?> kind = we.kind();
+						LOGGER.info("kind {}", kind);
+						
 						Object context = we.context();
+						LOGGER.info("context {}", context);
 					});
-				});
-				
-				this.schedule = system.scheduler().scheduleOnce(
-					FiniteDuration.create(10, TimeUnit.SECONDS), 
-					getSelf(), SCHEDULATION_WATCH, 
-					system.dispatcher(), getSelf());
-				
+				});								
 			})
 			.build();
 	}
