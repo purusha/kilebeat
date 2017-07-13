@@ -6,11 +6,14 @@ import static java.nio.file.StandardWatchEventKinds.ENTRY_DELETE;
 import java.io.File;
 import java.io.IOException;
 import java.nio.file.FileSystems;
+import java.nio.file.WatchEvent;
+import java.nio.file.WatchEvent.Kind;
 import java.nio.file.WatchKey;
 import java.nio.file.WatchService;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
+import java.util.concurrent.TimeUnit;
 
 import com.google.inject.Inject;
 import com.skillbill.at.akka.dto.WatchResource;
@@ -20,12 +23,17 @@ import com.typesafe.config.ConfigObject;
 
 import akka.actor.ActorRef;
 import akka.actor.ActorSystem;
+import akka.actor.Cancellable;
 import lombok.extern.slf4j.Slf4j;
+import scala.concurrent.duration.FiniteDuration;
 
 @Slf4j
 public class FileSystemWatcherActor extends GuiceAbstractActor {	
+	private static final String SCHEDULATION_WATCH = "SchedulationsWatch";
+	
 	private final WatchService watcher;
 	private final Map<WatchKey, WatchResource> keys;
+	private Cancellable schedule;
 	
 	@Inject
 	@SuppressWarnings("unchecked")
@@ -34,6 +42,11 @@ public class FileSystemWatcherActor extends GuiceAbstractActor {
 		this.keys = new HashMap<>();
 		
 		final ActorSystem system = getContext().system();
+		
+		this.schedule = system.scheduler().scheduleOnce(
+			FiniteDuration.create(10, TimeUnit.SECONDS), 
+			getSelf(), SCHEDULATION_WATCH, 
+			system.dispatcher(), getSelf());
 		
 		((List<ConfigObject>) config.getObjectList("exports")).forEach(obj -> {
 			final Config c = obj.toConfig();			
@@ -56,6 +69,9 @@ public class FileSystemWatcherActor extends GuiceAbstractActor {
 		super.postStop();
 		
 		LOGGER.info("end {} ", getSelf().path());
+		
+		watcher.close();
+		schedule.cancel();
 	}
 	
 	@Override
@@ -79,6 +95,25 @@ public class FileSystemWatcherActor extends GuiceAbstractActor {
 				keys.put(
 					parentFile.toPath().register(watcher, ENTRY_CREATE, ENTRY_DELETE), wr
 				);
+			})
+			.matchEquals(SCHEDULATION_WATCH, sw -> {
+				LOGGER.info("### check new files");
+				final ActorSystem system = getContext().system();
+				
+				keys.keySet().forEach(wk -> {
+					final List<WatchEvent<?>> pollEvents = wk.pollEvents();
+					
+					pollEvents.forEach(we -> {
+						Kind<?> kind = we.kind();
+						Object context = we.context();
+					});
+				});
+				
+				this.schedule = system.scheduler().scheduleOnce(
+					FiniteDuration.create(10, TimeUnit.SECONDS), 
+					getSelf(), SCHEDULATION_WATCH, 
+					system.dispatcher(), getSelf());
+				
 			})
 			.build();
 	}
