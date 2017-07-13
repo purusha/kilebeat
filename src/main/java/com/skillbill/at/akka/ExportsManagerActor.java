@@ -13,7 +13,6 @@ import com.skillbill.at.akka.dto.EndPointFailed;
 import com.skillbill.at.guice.GuiceAbstractActor;
 import com.skillbill.at.guice.GuiceActorUtils;
 import com.typesafe.config.Config;
-import com.typesafe.config.ConfigObject;
 
 import akka.actor.ActorRef;
 import akka.actor.ActorSystem;
@@ -29,26 +28,11 @@ public class ExportsManagerActor extends GuiceAbstractActor {
 	private final Cancellable schedule;
 
 	@Inject
-	@SuppressWarnings("unchecked")
 	public ExportsManagerActor(Config config) {
 		this.association = new HashMap<>();
 		
 		final ActorSystem system = getContext().system();
 		
-		((List<ConfigObject>) config.getObjectList("exports")).forEach(obj -> {
-			final Config c = obj.toConfig();			
-			
-			//create child
-			final ActorRef actorOf = getContext().actorOf(
-				GuiceActorUtils.makeProps(system, TailerActor.class), "tailer" + c.hashCode()
-			);
-			
-			//configure
-			actorOf.tell(c, ActorRef.noSender());
-			
-			//getContext().watch(actorOf);
-		});						
-	
 		schedule = system.scheduler().schedule(
 			FiniteDuration.create(10, TimeUnit.SECONDS), 
 			FiniteDuration.create(10, TimeUnit.SECONDS), 
@@ -80,13 +64,13 @@ public class ExportsManagerActor extends GuiceAbstractActor {
 				getFailed(getSender()).add(f);
 			})
 			.matchEquals(SCHEDULATION_CHECK, sc -> {	
-				LOGGER.info("### chec ### {}", association);
+				LOGGER.info("### check failure connnector {}", association.keySet());
 				
 				final Set<ActorRef> actorRefs = association.keySet();
 				
 				actorRefs.forEach(childActor -> {						
 					final List<EndPointFailed> actorFails = association.get(childActor);
-					LOGGER.info("found {} failed conf for {}", actorFails.size(), childActor);
+					LOGGER.info("### found {} failed conf for {}", actorFails.size(), childActor);
 					
 					for(int i = 0; i < actorFails.size(); i++) {						
 						final EndPointFailed configuration = actorFails.get(i);
@@ -102,6 +86,17 @@ public class ExportsManagerActor extends GuiceAbstractActor {
 				actorRefs.removeAll(
 					actorRefs.stream().filter(childActor -> association.get(childActor).isEmpty()).collect(Collectors.toList())
 				);
+			})
+			.match(Config.class, c -> {
+				//create child
+				final ActorRef actorOf = getContext().actorOf(
+					GuiceActorUtils.makeProps(getContext().system(), TailerActor.class), "tailer" + c.hashCode()
+				);
+				
+				//configure
+				actorOf.tell(c, ActorRef.noSender());
+				
+				//getContext().watch(actorOf);				
 			})
 			.matchAny(o -> {
 				LOGGER.warn("not handled message", o);

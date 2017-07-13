@@ -28,13 +28,13 @@ public class KafkaEndpointActor extends GuiceAbstractActor {
 	
 	@Inject
 	public KafkaEndpointActor() {				
-        final Properties configProperties = new Properties();
-        configProperties.put(ProducerConfig.BOOTSTRAP_SERVERS_CONFIG,"localhost:9092");
-        configProperties.put(ProducerConfig.KEY_SERIALIZER_CLASS_CONFIG,"org.apache.kafka.common.serialization.ByteArraySerializer");
-        configProperties.put(ProducerConfig.VALUE_SERIALIZER_CLASS_CONFIG,"org.apache.kafka.common.serialization.StringSerializer");
+        final Properties props = new Properties();
+        props.put(ProducerConfig.BOOTSTRAP_SERVERS_CONFIG, "localhost:9092");
+        props.put(ProducerConfig.KEY_SERIALIZER_CLASS_CONFIG, "org.apache.kafka.common.serialization.ByteArraySerializer");
+        props.put(ProducerConfig.VALUE_SERIALIZER_CLASS_CONFIG, "org.apache.kafka.common.serialization.StringSerializer");
 		
         //inject me please !!?
-        producer = new KafkaProducer<String, String>(configProperties);
+        producer = new KafkaProducer<String, String>(props);
         
         om = new ObjectMapper();        
 	}
@@ -70,16 +70,12 @@ public class KafkaEndpointActor extends GuiceAbstractActor {
 				
 		new RetryCommand(3, s.getPath()).run(new Callable<Void>() {						
 			@Override
-			public Void call() throws Exception {
-				try {
-					long offset = producer.send(
-						new ProducerRecord<String, String>(conf.getQueue(), om.writeValueAsString(s))
-					).get().offset();
-								
-					LOGGER.info("offset is {}", offset);
-				} catch (Exception e) {
-					throw new RuntimeException(e);
-				}
+			public Void call() throws Exception {				
+				long offset = producer.send(
+					new ProducerRecord<String, String>(conf.getQueue(), om.writeValueAsString(s))
+				).get().offset();
+							
+				LOGGER.info("offset is {}", offset);
 
 				return null;
 			}		
