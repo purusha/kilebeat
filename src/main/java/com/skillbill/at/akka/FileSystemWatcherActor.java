@@ -5,6 +5,7 @@ import static java.nio.file.StandardWatchEventKinds.*;
 import java.io.File;
 import java.io.IOException;
 import java.nio.file.FileSystems;
+import java.nio.file.Path;
 import java.nio.file.WatchEvent;
 import java.nio.file.WatchEvent.Kind;
 import java.nio.file.WatchKey;
@@ -107,8 +108,14 @@ public class FileSystemWatcherActor extends GuiceAbstractActor {
 						Kind<?> kind = we.kind();
 						LOGGER.info("kind {}", kind);
 						
-						Object context = we.context();
+						Path context = (Path)we.context();
 						LOGGER.info("context {}", context);
+						
+						if (kind == ENTRY_CREATE) {
+							
+						} else if (kind == ENTRY_DELETE) {
+							
+						}
 					});
 				});								
 			})
