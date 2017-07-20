@@ -27,7 +27,7 @@ public class KileBeatApplication {
         final GuiceExtensionImpl guiceExtension = GuiceExtension.provider.get(system);
         guiceExtension.setInjector(StartSystem.injector);       
 
-        //XXX create before wather because is used internally
+        //XXX create before watcher because manager use watcher internally
         system.actorOf(
     		GuiceActorUtils.makeProps(system, ExportsManagerActor.class), "manager"
 		);        

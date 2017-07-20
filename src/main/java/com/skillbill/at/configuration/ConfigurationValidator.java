@@ -1,4 +1,4 @@
-package com.skillbill.at.validation;
+package com.skillbill.at.configuration;
 
 import java.io.File;
 import java.util.List;
@@ -36,12 +36,16 @@ public class ConfigurationValidator {
 			throw new IllegalArgumentException("configuration file not valid");
 		}
 		
-		final ValidationResponse response = new ValidationResponse(load);
+		final ValidationResponse response = new ValidationResponse();
 		
 		IntStream.range(0, exports.size())
 			.forEachOrdered(i -> {				
 				final Config eConfig = exports.get(i).toConfig();
-				LOGGER.debug("{}^ => {}", i, eConfig);
+				LOGGER.debug("{}° => {}", i, eConfig);
+				
+				/*
+				 * validation starts
+				 */
 				
 				if (!eConfig.hasPath("path")) {
 					response.addError(i, String.format("%d element does not contains %s", i, "path"));
@@ -61,7 +65,16 @@ public class ConfigurationValidator {
 					if (!eConfig.hasPath("kafka.queue")) {
 						response.addError(i, String.format("%d element does not contains %s", i, "kafka.queue"));
 					}					
-				}				
+				}		
+				
+				/*
+				 * finally add Configuration 
+				 */
+				
+				if (!response.containsError(i)) {
+					response.addConfiguration(i, eConfig);
+				}
+				
 			});
 
 //			System.out.println(e.get("path").render());			

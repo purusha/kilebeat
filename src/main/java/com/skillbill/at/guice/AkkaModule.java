@@ -1,14 +1,17 @@
 package com.skillbill.at.guice;
 
 import java.io.File;
+import java.util.Map;
 
 import com.google.inject.Binder;
 import com.google.inject.Module;
-import com.skillbill.at.validation.ConfigurationValidator;
-import com.skillbill.at.validation.ValidationResponse;
-import com.typesafe.config.Config;
+import com.google.inject.name.Names;
+import com.skillbill.at.configuration.ConfigurationValidator;
+import com.skillbill.at.configuration.ValidationResponse;
 
 public class AkkaModule implements Module {
+
+	public static final String CONF = "CONF";
 
 	@Override
 	public void configure(Binder binder) {
@@ -22,7 +25,8 @@ public class AkkaModule implements Module {
 		}
 		
 		binder
-			.bind(Config.class)
+			.bind(Map.class)
+			.annotatedWith(Names.named(CONF))
 			.toInstance(validResp.getConfig());
 		
 	}
