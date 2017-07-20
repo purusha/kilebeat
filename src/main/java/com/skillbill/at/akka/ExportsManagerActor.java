@@ -10,9 +10,9 @@ import java.util.stream.Collectors;
 
 import com.google.inject.Inject;
 import com.skillbill.at.akka.dto.EndPointFailed;
+import com.skillbill.at.configuration.SingleConfiguration;
 import com.skillbill.at.guice.GuiceAbstractActor;
 import com.skillbill.at.guice.GuiceActorUtils;
-import com.typesafe.config.Config;
 
 import akka.actor.ActorRef;
 import akka.actor.ActorSystem;
@@ -28,7 +28,7 @@ public class ExportsManagerActor extends GuiceAbstractActor {
 	private final Cancellable schedule;
 
 	@Inject
-	public ExportsManagerActor(Config config) {
+	public ExportsManagerActor() {
 		this.association = new HashMap<>();
 		
 		final ActorSystem system = getContext().system();
@@ -85,7 +85,7 @@ public class ExportsManagerActor extends GuiceAbstractActor {
 					actorRefs.stream().filter(childActor -> association.get(childActor).isEmpty()).collect(Collectors.toList())
 				);
 			})
-			.match(Config.class, c -> {
+			.match(SingleConfiguration.class, c -> {
 				//create child
 				final ActorRef actorOf = getContext().actorOf(
 					GuiceActorUtils.makeProps(getContext().system(), TailerActor.class), "tailer" + c.hashCode()

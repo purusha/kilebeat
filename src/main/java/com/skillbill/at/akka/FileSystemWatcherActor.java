@@ -1,6 +1,7 @@
 package com.skillbill.at.akka;
 
-import static java.nio.file.StandardWatchEventKinds.*;
+import static java.nio.file.StandardWatchEventKinds.ENTRY_CREATE;
+import static java.nio.file.StandardWatchEventKinds.ENTRY_DELETE;
 
 import java.io.File;
 import java.io.IOException;
@@ -17,9 +18,8 @@ import java.util.concurrent.TimeUnit;
 
 import com.google.inject.Inject;
 import com.skillbill.at.akka.dto.WatchResource;
+import com.skillbill.at.configuration.ConfigurationValidator.ExportsConfiguration;
 import com.skillbill.at.guice.GuiceAbstractActor;
-import com.typesafe.config.Config;
-import com.typesafe.config.ConfigObject;
 
 import akka.actor.ActorRef;
 import akka.actor.ActorSystem;
@@ -36,8 +36,7 @@ public class FileSystemWatcherActor extends GuiceAbstractActor {
 	private Cancellable schedule;
 	
 	@Inject
-	@SuppressWarnings("unchecked")
-	public FileSystemWatcherActor(Config config) throws IOException {
+	public FileSystemWatcherActor(ExportsConfiguration config) throws IOException {
 		this.watcher = FileSystems.getDefault().newWatchService();
 		this.keys = new HashMap<>();
 		
@@ -45,14 +44,13 @@ public class FileSystemWatcherActor extends GuiceAbstractActor {
 		this.schedule = system.scheduler().scheduleOnce(FiniteDuration.create(100, TimeUnit.SECONDS), 
 			getSelf(), SCHEDULATION_WATCH, system.dispatcher(), getSelf());
 		
-		((List<ConfigObject>) config.getObjectList("exports")).forEach(obj -> {
-			final Config c = obj.toConfig();			
-			final File resource = new File(c.getString("path"));
+		config.getExports().forEach(obj -> {			
+			final File resource = new File(obj.getPath());
 			
 			if (resource.exists()) {
 				LOGGER.info("path {} is a regule file", resource);
 				
-				system.actorSelection("user/manager").tell(c, ActorRef.noSender());								
+				system.actorSelection("user/manager").tell(obj, ActorRef.noSender());								
 			} else {
 				LOGGER.info("path {} is a NOT regule file", resource);
 								

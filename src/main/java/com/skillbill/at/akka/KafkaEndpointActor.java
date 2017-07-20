@@ -11,8 +11,8 @@ import org.apache.kafka.clients.producer.ProducerRecord;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.google.inject.Inject;
 import com.skillbill.at.akka.dto.EndPointFailed;
-import com.skillbill.at.akka.dto.KafkaEndPointConfiuration;
 import com.skillbill.at.akka.dto.NewLineEvent;
+import com.skillbill.at.configuration.KafkaEndPointConfiuration;
 import com.skillbill.at.guice.GuiceAbstractActor;
 import com.skillbill.at.retry.RetryCommand;
 

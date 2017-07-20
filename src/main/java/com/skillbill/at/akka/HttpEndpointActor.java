@@ -3,9 +3,9 @@ package com.skillbill.at.akka;
 import org.codehaus.jackson.jaxrs.JacksonJsonProvider;
 
 import com.google.inject.Inject;
-import com.skillbill.at.akka.dto.HttpEndPointConfiuration;
 import com.skillbill.at.akka.dto.EndPointFailed;
 import com.skillbill.at.akka.dto.NewLineEvent;
+import com.skillbill.at.configuration.HttpEndPointConfiuration;
 import com.skillbill.at.guice.GuiceAbstractActor;
 import com.skillbill.at.retry.RetryCommand;
 import com.sun.jersey.api.client.Client;

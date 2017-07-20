@@ -1,8 +1,8 @@
-package com.skillbill.at.akka.dto;
+package com.skillbill.at.configuration;
 
 import org.apache.commons.lang3.StringUtils;
 
-public class KafkaEndPointConfiuration {
+public class KafkaEndPointConfiuration implements ConfigurationEndpoint {
 	private String queue;
 	private String url;
 

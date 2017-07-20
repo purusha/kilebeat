@@ -3,19 +3,23 @@ package com.skillbill.at.akka.dto;
 import java.time.LocalDateTime;
 import java.time.temporal.ChronoUnit;
 
+import com.skillbill.at.configuration.ConfigurationEndpoint;
+import com.skillbill.at.configuration.HttpEndPointConfiuration;
+import com.skillbill.at.configuration.KafkaEndPointConfiuration;
+
 import lombok.ToString;
 
 @ToString
 public class EndPointFailed {
-	private final Object conf;
+	private final ConfigurationEndpoint conf;
 	private final LocalDateTime now; 
 
-	public EndPointFailed(Object conf) {
+	public EndPointFailed(ConfigurationEndpoint conf) {
 		this.conf = conf;
 		this.now = LocalDateTime.now();
 	}
 
-	public Object getConf() {
+	public ConfigurationEndpoint getConf() {
 		return conf;
 	}
 

@@ -4,18 +4,20 @@ import static akka.actor.SupervisorStrategy.stop;
 
 import java.io.File;
 import java.nio.charset.Charset;
+import java.util.Optional;
 import java.util.concurrent.TimeUnit;
 
 import org.apache.commons.io.input.Tailer;
 import org.apache.commons.io.input.TailerListener;
 
 import com.skillbill.at.akka.dto.EndPointFailed;
-import com.skillbill.at.akka.dto.HttpEndPointConfiuration;
-import com.skillbill.at.akka.dto.KafkaEndPointConfiuration;
 import com.skillbill.at.akka.dto.NewLineEvent;
+import com.skillbill.at.configuration.ConfigurationEndpoint;
+import com.skillbill.at.configuration.HttpEndPointConfiuration;
+import com.skillbill.at.configuration.KafkaEndPointConfiuration;
+import com.skillbill.at.configuration.SingleConfiguration;
 import com.skillbill.at.guice.GuiceAbstractActor;
 import com.skillbill.at.guice.GuiceActorUtils;
-import com.typesafe.config.Config;
 
 import akka.actor.ActorRef;
 import akka.actor.OneForOneStrategy;
@@ -85,14 +87,16 @@ public class TailerActor extends GuiceAbstractActor implements TailerListener {
 					getContext().parent().tell(f, getSelf());
 				}
 			})
-			.match(Config.class, c -> {
-				resource = new File(c.getString("path"));				
+			.match(SingleConfiguration.class, c -> {
+				resource = new File(c.getPath());				
 				router = new Router(new BroadcastRoutingLogic());				
 
-				//DRY
-				final Config httpConfig = c.hasPath("http") ? c.getObject("http").toConfig() : null;								
-				if (httpConfig != null && !httpConfig.isEmpty()) {					
-					final HttpEndPointConfiuration conf = new HttpEndPointConfiuration(httpConfig.getString("url"));
+				final Optional<ConfigurationEndpoint> httpExist = c.getEndpoints().stream()
+					.filter(ce -> ce instanceof HttpEndPointConfiuration)
+					.findFirst();
+				
+				if (httpExist.isPresent()) {							
+					final ConfigurationEndpoint conf = httpExist.get();
 					router = router.addRoutee(buildRoutee(
 						conf,
 						getContext().actorOf(
@@ -101,11 +105,13 @@ public class TailerActor extends GuiceAbstractActor implements TailerListener {
 						)																	
 					));
 				}
+
+				final Optional<ConfigurationEndpoint> kafkaExist = c.getEndpoints().stream()
+						.filter(ce -> ce instanceof KafkaEndPointConfiuration)
+						.findFirst();
 				
-				//DRY				
-				final Config kafkaConfig = c.hasPath("kafka") ? c.getObject("kafka").toConfig() : null;
-				if (kafkaConfig != null && !kafkaConfig.isEmpty()) {
-					KafkaEndPointConfiuration conf = new KafkaEndPointConfiuration(kafkaConfig.getString("queue"));
+				if(kafkaExist.isPresent()) {
+					final ConfigurationEndpoint conf = httpExist.get();
 					router = router.addRoutee(buildRoutee(
 						conf,
 						getContext().actorOf(
@@ -126,13 +132,13 @@ public class TailerActor extends GuiceAbstractActor implements TailerListener {
 	}
 
 	@Override
-	public void init(Tailer tailer) { } /* avoid interface segregation pplease !!? */
+	public void init(Tailer tailer) { } /* avoid interface segregation please !!? */
 
 	@Override
-	public void fileNotFound() { } /* avoid interface segregation pplease !!? */
+	public void fileNotFound() { } /* avoid interface segregation please !!? */
 
 	@Override
-	public void fileRotated() { } /* avoid interface segregation pplease !!? */
+	public void fileRotated() { } /* avoid interface segregation please !!? */
 
 	@Override
 	public void handle(String line) {				
@@ -162,7 +168,7 @@ public class TailerActor extends GuiceAbstractActor implements TailerListener {
         );		
 	}
 
-	private Routee buildRoutee(Object conf, ActorRef child) {		
+	private Routee buildRoutee(ConfigurationEndpoint conf, ActorRef child) {		
 		child.tell(conf, ActorRef.noSender()); //configure					
 		getContext().watch(child); //to see Terminated event associated with 'child' actor
 		
