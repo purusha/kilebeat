@@ -10,17 +10,17 @@ We also support stop and resume of endpoint connector (losing all messages in th
 Example configuration and usage:
 ```
 exports = [
-	{
-		path = "/Users/auser/Tmp/a"
-		http {
-    		url = "http://localhost:55555/test"
-    	}
-	}
-	{
-		path = "/Users/auser/Tmp/*.log"
-    	http {
-    		url = "http://localhost:55555/log"
-		}
-	}	
+    {
+        path = "/Users/power/Tmp/a"
+        http {
+            url = "http://localhost:55555/log"
+        }
+    }
+    {
+        path = "/Users/power/Tmp/*.log"
+        http {
+            url = "http://localhost:55555/test"
+        }
+    }	
 ]
 ```

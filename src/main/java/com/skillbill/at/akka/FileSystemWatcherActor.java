@@ -41,7 +41,7 @@ public class FileSystemWatcherActor extends GuiceAbstractActor {
 		this.keys = new HashMap<>();
 		
 		final ActorSystem system = getContext().system();		
-		this.schedule = system.scheduler().scheduleOnce(FiniteDuration.create(1, TimeUnit.SECONDS), 
+		this.schedule = system.scheduler().scheduleOnce(FiniteDuration.create(30, TimeUnit.SECONDS), 
 			getSelf(), SCHEDULATION_WATCH, system.dispatcher(), getSelf());
 		
 		config.getExports().forEach(obj -> {			
