@@ -20,7 +20,7 @@ import akka.actor.Cancellable;
 import lombok.extern.slf4j.Slf4j;
 import scala.concurrent.duration.FiniteDuration;
 
-import static com.skillbill.at.Utility.*;
+import static com.skillbill.at.ActorNamesFactory.*;
 
 @Slf4j
 public class ExportsManagerActor extends GuiceAbstractActor {	

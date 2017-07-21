@@ -2,7 +2,7 @@ package com.skillbill.at;
 
 import org.apache.commons.lang3.RandomStringUtils;
 
-public class Utility {
+public class ActorNamesFactory {
 	
 	public static String tailer(){
 		return "tailer" + RandomStringUtils.random(10, false, true);

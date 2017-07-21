@@ -31,7 +31,7 @@ import akka.routing.Router;
 import lombok.extern.slf4j.Slf4j;
 import scala.concurrent.duration.Duration;
 
-import static com.skillbill.at.Utility.*;
+import static com.skillbill.at.ActorNamesFactory.*;
 
 @Slf4j
 public class TailerActor extends GuiceAbstractActor implements TailerListener {		
