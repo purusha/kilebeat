@@ -1,6 +1,7 @@
 package com.skillbill.at.akka;
 
 import static akka.actor.SupervisorStrategy.stop;
+import static com.skillbill.at.akka.ActorNamesFactory.*;
 
 import java.io.File;
 import java.nio.charset.Charset;
@@ -30,8 +31,6 @@ import akka.routing.Routee;
 import akka.routing.Router;
 import lombok.extern.slf4j.Slf4j;
 import scala.concurrent.duration.Duration;
-
-import static com.skillbill.at.ActorNamesFactory.*;
 
 @Slf4j
 public class TailerActor extends GuiceAbstractActor implements TailerListener {		

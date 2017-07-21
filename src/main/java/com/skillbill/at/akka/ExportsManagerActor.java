@@ -1,5 +1,7 @@
 package com.skillbill.at.akka;
 
+import static com.skillbill.at.akka.ActorNamesFactory.*;
+
 import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
@@ -19,8 +21,6 @@ import akka.actor.ActorSystem;
 import akka.actor.Cancellable;
 import lombok.extern.slf4j.Slf4j;
 import scala.concurrent.duration.FiniteDuration;
-
-import static com.skillbill.at.ActorNamesFactory.*;
 
 @Slf4j
 public class ExportsManagerActor extends GuiceAbstractActor {	

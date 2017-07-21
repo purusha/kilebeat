@@ -54,7 +54,8 @@ public class FileSystemWatcherActor extends GuiceAbstractActor {
 			} else {
 				LOGGER.info("path {} is a NOT regule file", resource);
 								
-				getSelf().tell(new WatchResource(resource.getParentFile(), resource.getName()), ActorRef.noSender());
+				//getSelf().tell(new WatchResource(resource.getParentFile(), resource.getName()), ActorRef.noSender());
+				getSelf().tell(new WatchResource(obj), ActorRef.noSender());
 			}
 		});						
 	}
@@ -78,10 +79,8 @@ public class FileSystemWatcherActor extends GuiceAbstractActor {
 	public Receive createReceive() {
 		return receiveBuilder()
 			.match(WatchResource.class, wr -> {
-				String name = wr.getName();
-				LOGGER.info("name {}", name);
 				
-				File parentFile = wr.getParentFile();
+				File parentFile = wr.parentDirectory();
 				LOGGER.info("parentFile {}", parentFile);				
 
 				//XXX NPE for parentFile is NULL
