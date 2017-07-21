@@ -10,7 +10,7 @@ import java.util.stream.Collectors;
 
 import com.google.inject.Inject;
 import com.skillbill.at.akka.dto.EndPointFailed;
-import com.skillbill.at.configuration.SingleConfiguration;
+import com.skillbill.at.configuration.ConfigurationValidator.SingleConfiguration;
 import com.skillbill.at.guice.GuiceAbstractActor;
 import com.skillbill.at.guice.GuiceActorUtils;
 
@@ -19,6 +19,8 @@ import akka.actor.ActorSystem;
 import akka.actor.Cancellable;
 import lombok.extern.slf4j.Slf4j;
 import scala.concurrent.duration.FiniteDuration;
+
+import static com.skillbill.at.Utility.*;
 
 @Slf4j
 public class ExportsManagerActor extends GuiceAbstractActor {	
@@ -88,7 +90,7 @@ public class ExportsManagerActor extends GuiceAbstractActor {
 			.match(SingleConfiguration.class, c -> {
 				//create child
 				final ActorRef actorOf = getContext().actorOf(
-					GuiceActorUtils.makeProps(getContext().system(), TailerActor.class), "tailer" + c.hashCode()
+					GuiceActorUtils.makeProps(getContext().system(), TailerActor.class), tailer()
 				);
 				
 				//configure

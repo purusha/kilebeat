@@ -13,9 +13,9 @@ import org.apache.commons.io.input.TailerListener;
 import com.skillbill.at.akka.dto.EndPointFailed;
 import com.skillbill.at.akka.dto.NewLineEvent;
 import com.skillbill.at.configuration.ConfigurationEndpoint;
+import com.skillbill.at.configuration.ConfigurationValidator.SingleConfiguration;
 import com.skillbill.at.configuration.HttpEndPointConfiuration;
 import com.skillbill.at.configuration.KafkaEndPointConfiuration;
-import com.skillbill.at.configuration.SingleConfiguration;
 import com.skillbill.at.guice.GuiceAbstractActor;
 import com.skillbill.at.guice.GuiceActorUtils;
 
@@ -30,6 +30,8 @@ import akka.routing.Routee;
 import akka.routing.Router;
 import lombok.extern.slf4j.Slf4j;
 import scala.concurrent.duration.Duration;
+
+import static com.skillbill.at.Utility.*;
 
 @Slf4j
 public class TailerActor extends GuiceAbstractActor implements TailerListener {		
@@ -79,7 +81,7 @@ public class TailerActor extends GuiceAbstractActor implements TailerListener {
 						f.getConf(),
 						getContext().actorOf(
 							GuiceActorUtils.makeProps(getContext().system(), f.isHttp() ? HttpEndpointActor.class : KafkaEndpointActor.class),
-							(f.isHttp() ? "http" : "kafka") + f.getConf().hashCode()
+							f.isHttp() ? http() : kafka()
 						)											
 					));
 				} else {
@@ -96,12 +98,11 @@ public class TailerActor extends GuiceAbstractActor implements TailerListener {
 					.findFirst();
 				
 				if (httpExist.isPresent()) {							
-					final ConfigurationEndpoint conf = httpExist.get();
 					router = router.addRoutee(buildRoutee(
-						conf,
+						httpExist.get(),
 						getContext().actorOf(
 							GuiceActorUtils.makeProps(getContext().system(), HttpEndpointActor.class),
-							"http" + conf.hashCode()
+							http()
 						)																	
 					));
 				}
@@ -111,12 +112,11 @@ public class TailerActor extends GuiceAbstractActor implements TailerListener {
 						.findFirst();
 				
 				if(kafkaExist.isPresent()) {
-					final ConfigurationEndpoint conf = httpExist.get();
 					router = router.addRoutee(buildRoutee(
-						conf,
+						kafkaExist.get(),
 						getContext().actorOf(
 							GuiceActorUtils.makeProps(getContext().system(), KafkaEndpointActor.class),
-							"kafka" + conf.hashCode()
+							kafka()
 						)												
 					));
 				}		
