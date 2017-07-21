@@ -6,3 +6,21 @@ For the first release with support only two connector
 - kafka 
 
 We also support stop and resume of endpoint connector (losing all messages in the period when server connector's was down)
+
+Example configuration and usage:
+```
+exports = [
+	{
+		path = "/Users/auser/Tmp/a"
+		http {
+    		url = "http://localhost:55555/test"
+    	}
+	}
+	{
+		path = "/Users/auser/Tmp/*.log"
+    	http {
+    		url = "http://localhost:55555/log"
+		}
+	}	
+]
+```

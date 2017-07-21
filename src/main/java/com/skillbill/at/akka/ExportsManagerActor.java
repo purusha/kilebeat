@@ -64,9 +64,8 @@ public class ExportsManagerActor extends GuiceAbstractActor {
 				getFailed(getSender()).add(f);
 			})
 			.matchEquals(SCHEDULATION_CHECK, sc -> {	
-				LOGGER.info("### check failure connnector {}", association.keySet());
-				
-				final Set<ActorRef> actorRefs = association.keySet();
+				LOGGER.info("### check failure connnector");
+				final Set<ActorRef> actorRefs = association.keySet();											
 				
 				actorRefs.forEach(childActor -> {						
 					final List<EndPointFailed> actorFails = association.get(childActor);

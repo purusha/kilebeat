@@ -11,6 +11,8 @@ import java.util.SortedMap;
 import java.util.TreeMap;
 import java.util.stream.IntStream;
 
+import org.apache.commons.beanutils.BeanUtils;
+
 import com.typesafe.config.Config;
 import com.typesafe.config.ConfigFactory;
 import com.typesafe.config.ConfigObject;
@@ -149,8 +151,7 @@ public class ConfigurationValidator {
 		}
 	}	
 	
-	public class SingleConfiguration {
-		
+	public class SingleConfiguration {		
 		@Getter
 		private final String path;
 		
@@ -168,6 +169,34 @@ public class ConfigurationValidator {
 		public List<ConfigurationEndpoint> getEndpoints() {
 			return Collections.unmodifiableList(endpoints);
 		}
+
+		public SingleConfiguration makeCopy(String path) {
+			final SingleConfiguration ret = new SingleConfiguration(path);
+			
+			endpoints.forEach(ep -> {				
+				final ConfigurationEndpoint dest = emptyDto(ep);
+				
+				try {
+					BeanUtils.copyProperties(dest, ep);
+				} catch (Exception e) {
+					e.printStackTrace();
+				}
+				
+				ret.addEndpoint(dest);
+			});
+			
+			return ret;			
+		}
+
+		private ConfigurationEndpoint emptyDto(ConfigurationEndpoint ep) {
+			if (ep instanceof HttpEndPointConfiuration) {
+				return new HttpEndPointConfiuration(null);
+			} else if (ep instanceof KafkaEndPointConfiuration) {
+				return new KafkaEndPointConfiuration(null);
+			} else {
+				throw new RuntimeException("XXX");
+			}
+		}
 	}	
-		
+				
 }

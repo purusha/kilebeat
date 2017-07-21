@@ -7,18 +7,18 @@ import java.io.File;
 import java.io.IOException;
 import java.nio.file.FileSystems;
 import java.nio.file.Path;
-import java.nio.file.WatchEvent;
 import java.nio.file.WatchEvent.Kind;
 import java.nio.file.WatchKey;
 import java.nio.file.WatchService;
 import java.util.HashMap;
-import java.util.List;
 import java.util.Map;
 import java.util.concurrent.TimeUnit;
+import java.util.regex.Pattern;
 
 import com.google.inject.Inject;
 import com.skillbill.at.akka.dto.WatchResource;
 import com.skillbill.at.configuration.ConfigurationValidator.ExportsConfiguration;
+import com.skillbill.at.configuration.ConfigurationValidator.SingleConfiguration;
 import com.skillbill.at.guice.GuiceAbstractActor;
 
 import akka.actor.ActorRef;
@@ -41,20 +41,19 @@ public class FileSystemWatcherActor extends GuiceAbstractActor {
 		this.keys = new HashMap<>();
 		
 		final ActorSystem system = getContext().system();		
-		this.schedule = system.scheduler().scheduleOnce(FiniteDuration.create(100, TimeUnit.SECONDS), 
+		this.schedule = system.scheduler().scheduleOnce(FiniteDuration.create(1, TimeUnit.SECONDS), 
 			getSelf(), SCHEDULATION_WATCH, system.dispatcher(), getSelf());
 		
 		config.getExports().forEach(obj -> {			
 			final File resource = new File(obj.getPath());
 			
 			if (resource.exists()) {
-				LOGGER.info("path {} is a regule file", resource);
+				LOGGER.info("path {} is a regular file", resource);
 				
 				system.actorSelection("user/manager").tell(obj, ActorRef.noSender());								
 			} else {
-				LOGGER.info("path {} is a NOT regule file", resource);
-								
-				//getSelf().tell(new WatchResource(resource.getParentFile(), resource.getName()), ActorRef.noSender());
+				LOGGER.info("path {} contains pattern", resource);
+				
 				getSelf().tell(new WatchResource(obj), ActorRef.noSender());
 			}
 		});						
@@ -90,32 +89,50 @@ public class FileSystemWatcherActor extends GuiceAbstractActor {
 			})
 			.matchEquals(SCHEDULATION_WATCH, sw -> {
 				final ActorSystem system = getContext().system();				
-				this.schedule = system.scheduler().scheduleOnce(FiniteDuration.create(100, TimeUnit.SECONDS), 
+				this.schedule = system.scheduler().scheduleOnce(FiniteDuration.create(30, TimeUnit.SECONDS), 
 					getSelf(), SCHEDULATION_WATCH, system.dispatcher(), getSelf());
 				
 				LOGGER.info("### check new files");				
 				
 				keys.keySet().forEach(wk -> {
-					LOGGER.info("watchKey is {}", wk);
+					final SingleConfiguration initialConf = keys.get(wk).getConf();					
 					
-					final List<WatchEvent<?>> pollEvents = wk.pollEvents();
-					LOGGER.info("found {} events", pollEvents.size());
-					
-					pollEvents.forEach(we -> {
-						Kind<?> kind = we.kind();
-						LOGGER.info("kind {}", kind);
+					wk.pollEvents().forEach(we -> {						
+						final Path context = (Path)we.context();	
+						final File initialResource = new File(initialConf.getPath());				
+						final String currentName = context.toFile().getName();
 						
-						Path context = (Path)we.context();
-						LOGGER.info("context {}", context);
-						
-						if (kind == ENTRY_CREATE) {
+						if (matchConfiguration(initialResource.getName(), currentName)) {
+							final Kind<?> kind = we.kind();
 							
-						} else if (kind == ENTRY_DELETE) {
-							
-						}
+							if (kind == ENTRY_CREATE) {							
+								final SingleConfiguration newSc = initialConf.makeCopy(currentName);
+								
+								system.actorSelection("user/manager").tell(newSc, ActorRef.noSender());							
+							} else if (kind == ENTRY_DELETE) {
+								
+								/* 
+								 	XXX implement me!								 	
+								 	Send PosionPill to the ActorRef								 	 
+								*/
+								
+							}							
+						} else {
+							LOGGER.info(
+								"skip file {} because not match the given pattern {}", 
+								initialResource.getParent() + "/" + currentName, initialResource.getAbsolutePath()
+							);
+						}						
 					});
 				});								
 			})
 			.build();
+	}
+
+	private boolean matchConfiguration(String initialName, String currentName) {	
+		final String regex = initialName.replace("?", ".?").replace("*", ".*?");		
+		final Pattern pattern = Pattern.compile(regex);
+		
+		return pattern.matcher(currentName).matches();
 	}
 }
