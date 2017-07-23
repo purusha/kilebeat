@@ -1,9 +1,11 @@
 package com.skillbill.at.akka;
 
 import static akka.actor.SupervisorStrategy.stop;
-import static com.skillbill.at.akka.ActorNamesFactory.*;
+import static com.skillbill.at.akka.ActorNamesFactory.http;
+import static com.skillbill.at.akka.ActorNamesFactory.kafka;
 
 import java.io.File;
+import java.io.FileNotFoundException;
 import java.nio.charset.Charset;
 import java.util.Optional;
 import java.util.concurrent.TimeUnit;
@@ -22,6 +24,7 @@ import com.skillbill.at.guice.GuiceActorUtils;
 
 import akka.actor.ActorRef;
 import akka.actor.OneForOneStrategy;
+import akka.actor.PoisonPill;
 import akka.actor.SupervisorStrategy;
 import akka.actor.Terminated;
 import akka.japi.pf.DeciderBuilder;
@@ -61,8 +64,7 @@ public class TailerActor extends GuiceAbstractActor implements TailerListener {
 	public Receive createReceive() {
 		return receiveBuilder()
 			.match(NewLineEvent.class, s -> {
-				LOGGER.info("[row] {}", s);
-				
+				//LOGGER.info("[row] {}", s);				
 				router.route(s, ActorRef.noSender());
 			})
 			.match(Terminated.class, t -> {				
@@ -149,6 +151,14 @@ public class TailerActor extends GuiceAbstractActor implements TailerListener {
 	@Override
 	public void handle(Exception ex) {
 		LOGGER.error("[ => ]", ex);
+		
+		if (ex instanceof FileNotFoundException) { //occur when file is deleted during tailer are working on!!
+			LOGGER.info("file to tail not found{}", resource);
+			
+			//XXX stop before all the children
+			
+			getSelf().tell(PoisonPill.getInstance(), ActorRef.noSender());
+		}
 	}
 	
 	@Override

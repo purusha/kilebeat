@@ -48,12 +48,10 @@ public class FileSystemWatcherActor extends GuiceAbstractActor {
 			final File resource = new File(obj.getPath());
 			
 			if (resource.exists()) {
-				LOGGER.info("path {} is a regular file", resource);
-				
+				LOGGER.info("on path {} ... run tail", resource);				
 				system.actorSelection("user/manager").tell(obj, ActorRef.noSender());								
 			} else {
-				LOGGER.info("path {} contains pattern", resource);
-				
+				LOGGER.info("on path {} ... can't run tail", resource);				
 				getSelf().tell(new WatchResource(obj), ActorRef.noSender());
 			}
 		});						
@@ -105,8 +103,9 @@ public class FileSystemWatcherActor extends GuiceAbstractActor {
 						if (matchConfiguration(initialResource.getName(), currentName)) {
 							final Kind<?> kind = we.kind();
 							
-							if (kind == ENTRY_CREATE) {							
+							if (kind == ENTRY_CREATE) {										
 								final SingleConfiguration newSc = initialConf.makeCopy(currentName);
+								LOGGER.info("on path {} ... run tail", newSc.getPath());
 								
 								system.actorSelection("user/manager").tell(newSc, ActorRef.noSender());							
 							} else if (kind == ENTRY_DELETE) {

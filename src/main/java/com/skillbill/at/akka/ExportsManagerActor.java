@@ -83,7 +83,9 @@ public class ExportsManagerActor extends GuiceAbstractActor {
 				
 				//remove key's without values!!
 				actorRefs.removeAll(
-					actorRefs.stream().filter(childActor -> association.get(childActor).isEmpty()).collect(Collectors.toList())
+					actorRefs.stream()
+						.filter(childActor -> association.get(childActor).isEmpty())
+						.collect(Collectors.toList())
 				);
 			})
 			.match(SingleConfiguration.class, c -> {
