@@ -1,13 +1,11 @@
 package com.skillbill.at.akka;
 
 import static java.nio.file.StandardWatchEventKinds.ENTRY_CREATE;
-import static java.nio.file.StandardWatchEventKinds.ENTRY_DELETE;
 
 import java.io.File;
 import java.io.IOException;
 import java.nio.file.FileSystems;
 import java.nio.file.Path;
-import java.nio.file.WatchEvent.Kind;
 import java.nio.file.WatchKey;
 import java.nio.file.WatchService;
 import java.util.HashMap;
@@ -82,7 +80,7 @@ public class FileSystemWatcherActor extends GuiceAbstractActor {
 
 				//XXX NPE for parentFile is NULL
 				keys.put(
-					parentFile.toPath().register(watcher, ENTRY_CREATE, ENTRY_DELETE), wr
+					parentFile.toPath().register(watcher, ENTRY_CREATE), wr
 				);
 			})
 			.matchEquals(SCHEDULATION_WATCH, sw -> {
@@ -101,21 +99,10 @@ public class FileSystemWatcherActor extends GuiceAbstractActor {
 						final String currentName = context.toFile().getName();
 						
 						if (matchConfiguration(initialResource.getName(), currentName)) {
-							final Kind<?> kind = we.kind();
+							final SingleConfiguration newSc = initialConf.makeCopy(initialResource.getParent() + "/" + currentName);
+							LOGGER.info("on path {} ... run tail", newSc.getPath());
 							
-							if (kind == ENTRY_CREATE) {										
-								final SingleConfiguration newSc = initialConf.makeCopy(currentName);
-								LOGGER.info("on path {} ... run tail", newSc.getPath());
-								
-								system.actorSelection("user/manager").tell(newSc, ActorRef.noSender());							
-							} else if (kind == ENTRY_DELETE) {
-								
-								/* 
-								 	XXX implement me!								 	
-								 	Send PosionPill to the ActorRef								 	 
-								*/
-								
-							}							
+							system.actorSelection("user/manager").tell(newSc, ActorRef.noSender());							
 						} else {
 							LOGGER.info(
 								"skip file {} because not match the given pattern {}", 

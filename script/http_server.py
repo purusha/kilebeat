@@ -35,6 +35,7 @@ class S(BaseHTTPRequestHandler):
         # Doesn't do anything with posted data
 	content_length = int(self.headers['Content-Length']) # <--- Gets the size of data
         post_data = self.rfile.read(content_length) # <--- Gets the data itself
+	print post_data
         self._set_headers()
         self.wfile.write(post_data)
         
