@@ -25,7 +25,7 @@ exports = [
     {
         path = "/Users/power/Tmp/q"
         kafka {
-            queue = "localhost:666666@test"
+            queue = "localhost:44444@test"
         }
     }
 ]
