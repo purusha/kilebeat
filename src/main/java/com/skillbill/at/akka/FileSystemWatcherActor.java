@@ -111,8 +111,8 @@ public class FileSystemWatcherActor extends GuiceAbstractActor {
 							} else if (kind == ENTRY_DELETE) {
 								
 								/* 
-								 	XXX implement me!								 	
-								 	Send PosionPill to the ActorRef								 	 
+								 	XXX don't implement me!	...
+								 	if one file that i tail on is deleted, his tailer instance will receive an error previusly
 								*/
 								
 							}							
