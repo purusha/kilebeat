@@ -11,6 +11,7 @@ import com.skillbill.at.guice.GuiceAbstractActor;
 import akka.actor.ActorIdentity;
 import akka.actor.ActorPath;
 import akka.actor.ActorRef;
+import akka.actor.DeadLetter;
 import akka.actor.Identify;
 import lombok.extern.slf4j.Slf4j;
 
@@ -23,8 +24,6 @@ public class RetrieveActors extends GuiceAbstractActor {
     public void preStart() throws Exception {
     	super.preStart();
     	LOGGER.info("start {} with parent {}", getSelf().path(), getContext().parent());
-    	        
-    	getContext().actorSelection("/*").tell(new Identify(identifyId), getSelf());
     }
 
 	@Override
@@ -53,6 +52,12 @@ public class RetrieveActors extends GuiceAbstractActor {
 				}				
 				
 			})
+			.match(DeadLetter.class, de -> {
+				getContext().actorSelection("/*").tell(new Identify(identifyId), getSelf());
+			})
+			.matchAny(o -> {
+				LOGGER.warn("not handled message", o);
+			})			
 			.build();
 	}
 

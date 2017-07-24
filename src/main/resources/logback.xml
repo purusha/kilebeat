@@ -24,8 +24,6 @@
 
     <!-- internally file output -->
     <appender name="INTERNAL-FILE" class="ch.qos.logback.core.rolling.RollingFileAppender">
-    	<file>internal.log</file>
-    	
         <!-- encoder defaults to ch.qos.logback.classic.encoder.PatternLayoutEncoder -->
         <encoder>
             <pattern>%d{HH:mm:ss.SSS} [%thread] %-5level %logger{36} - %msg%n</pattern>
@@ -33,7 +31,7 @@
 
         <rollingPolicy class="ch.qos.logback.core.rolling.TimeBasedRollingPolicy">
             <!-- rollover daily -->
-            <fileNamePattern>logs/%d{yyyy-MM-dd}.%i.log</fileNamePattern>
+            <fileNamePattern>logs/%d{yyyy-MM-dd}.%i.internal.log</fileNamePattern>
             <timeBasedFileNamingAndTriggeringPolicy class="ch.qos.logback.core.rolling.SizeAndTimeBasedFNATP">
                 <!-- or whenever the file size reaches 64 MB -->
                 <maxFileSize>64 MB</maxFileSize>
@@ -58,9 +56,11 @@
         </filter>
     </appender>
     
+    
     <logger name="internal" level="DEBUG" additivity="false">
         <appender-ref ref="INTERNAL-FILE"/>
     </logger>
+    
 
     <root level="INFO">
         <appender-ref ref="FILE"/>

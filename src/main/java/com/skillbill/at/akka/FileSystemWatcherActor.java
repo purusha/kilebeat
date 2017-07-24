@@ -112,6 +112,9 @@ public class FileSystemWatcherActor extends GuiceAbstractActor {
 					});
 				});								
 			})
+			.matchAny(o -> {
+				LOGGER.warn("not handled message", o);
+			})			
 			.build();
 	}
 
