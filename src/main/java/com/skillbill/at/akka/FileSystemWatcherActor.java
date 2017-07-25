@@ -4,17 +4,17 @@ import static java.nio.file.StandardWatchEventKinds.ENTRY_CREATE;
 
 import java.io.File;
 import java.io.IOException;
-import java.nio.file.FileSystems;
 import java.nio.file.Path;
+import java.nio.file.WatchEvent;
 import java.nio.file.WatchKey;
 import java.nio.file.WatchService;
 import java.util.HashMap;
 import java.util.Map;
+import java.util.Optional;
 import java.util.concurrent.TimeUnit;
 import java.util.regex.Pattern;
 
 import com.google.inject.Inject;
-import com.skillbill.at.akka.dto.WatchResource;
 import com.skillbill.at.configuration.ConfigurationValidator.ExportsConfiguration;
 import com.skillbill.at.configuration.ConfigurationValidator.SingleConfiguration;
 import com.skillbill.at.guice.GuiceAbstractActor;
@@ -29,13 +29,13 @@ import scala.concurrent.duration.FiniteDuration;
 public class FileSystemWatcherActor extends GuiceAbstractActor {	
 	private static final String SCHEDULATION_WATCH = "SchedulationsWatch";
 	
-	private final WatchService watcher;
-	private final Map<WatchKey, WatchResource> keys;
+	private final Map<SingleConfiguration, WatchService> watchers;
+	private final Map<SingleConfiguration, WatchKey> keys;
 	private Cancellable schedule;
 	
 	@Inject
 	public FileSystemWatcherActor(ExportsConfiguration config) throws IOException {
-		this.watcher = FileSystems.getDefault().newWatchService();
+		this.watchers = new HashMap<>();
 		this.keys = new HashMap<>();
 		
 		final ActorSystem system = getContext().system();		
@@ -50,7 +50,7 @@ public class FileSystemWatcherActor extends GuiceAbstractActor {
 				system.actorSelection("user/manager").tell(obj, ActorRef.noSender());								
 			} else {
 				LOGGER.info("on path {} ... can't run tail", resource);				
-				getSelf().tell(new WatchResource(obj), ActorRef.noSender());
+				getSelf().tell(obj, ActorRef.noSender());
 			}
 		});						
 	}
@@ -60,7 +60,14 @@ public class FileSystemWatcherActor extends GuiceAbstractActor {
 		super.postStop();
 		LOGGER.info("end {} ", getSelf().path());
 		
-		watcher.close();
+		watchers.values().forEach(ws -> {
+			try {
+				ws.close();
+			} catch (IOException e) {
+				LOGGER.error("", e);				
+			}
+		});
+		
 		schedule.cancel();
 	}
 	
@@ -73,15 +80,16 @@ public class FileSystemWatcherActor extends GuiceAbstractActor {
 	@Override
 	public Receive createReceive() {
 		return receiveBuilder()
-			.match(WatchResource.class, wr -> {
+			.match(SingleConfiguration.class, sc -> {				
+				final File parentFile = new File(sc.getPath()).getParentFile();
+				LOGGER.info("parentFile {} for configuration {}", parentFile, sc);
 				
-				File parentFile = wr.parentDirectory();
-				LOGGER.info("parentFile {}", parentFile);				
+				final Path path = parentFile.toPath();
+				final WatchService wService = path.getFileSystem().newWatchService();				
 
-				//XXX NPE for parentFile is NULL
-				keys.put(
-					parentFile.toPath().register(watcher, ENTRY_CREATE), wr
-				);
+				//XXX NPE for parentFile is NULL				
+				keys.put(sc, path.register(wService, ENTRY_CREATE));
+				watchers.put(sc, wService);
 			})
 			.matchEquals(SCHEDULATION_WATCH, sw -> {
 				final ActorSystem system = getContext().system();				
@@ -89,28 +97,19 @@ public class FileSystemWatcherActor extends GuiceAbstractActor {
 					getSelf(), SCHEDULATION_WATCH, system.dispatcher(), getSelf());
 				
 				LOGGER.info("### check new files");				
+				//LOGGER.info("{}", keys);
 				
-				keys.keySet().forEach(wk -> {
-					final SingleConfiguration initialConf = keys.get(wk).getConf();					
-					
-					wk.pollEvents().forEach(we -> {						
-						final Path context = (Path)we.context();	
-						final File initialResource = new File(initialConf.getPath());				
-						final String currentName = context.toFile().getName();
-						
-						if (matchConfiguration(initialResource.getName(), currentName)) {
-							final SingleConfiguration newSc = initialConf.makeCopy(initialResource.getParent() + "/" + currentName);
-							LOGGER.info("on path {} ... run tail", newSc.getPath());
-							
-							system.actorSelection("user/manager").tell(newSc, ActorRef.noSender());							
-						} else {
-							LOGGER.info(
-								"skip file {} because not match the given pattern {}", 
-								initialResource.getParent() + "/" + currentName, initialResource.getAbsolutePath()
-							);
-						}						
-					});
-				});								
+				keys.keySet().forEach(initialConf -> {
+					keys.get(initialConf).pollEvents().stream()
+						.map(we -> canHandleEvent(we, initialConf))
+						.filter(osc -> osc.isPresent())
+						.map(osc -> osc.get())
+						.forEach(
+							sc -> system.actorSelection("user/manager").tell(sc, ActorRef.noSender())
+						);
+				});		
+				
+				//XXX when remove elements from keys Map ???
 			})
 			.matchAny(o -> {
 				LOGGER.warn("not handled message", o);
@@ -118,10 +117,27 @@ public class FileSystemWatcherActor extends GuiceAbstractActor {
 			.build();
 	}
 
+	private Optional<SingleConfiguration> canHandleEvent(WatchEvent<?> we, SingleConfiguration initialConf) {
+		final Path context = (Path)we.context();	
+		final File initialResource = new File(initialConf.getPath());				
+		final String currentName = context.toFile().getName();
+		final String path = initialResource.getParent() + "/" + currentName;
+		SingleConfiguration newSc = null;
+		
+		if (matchConfiguration(initialResource.getName(), currentName)) {
+			newSc = initialConf.makeCopy(path);
+			LOGGER.info("on path {} ... run tail", newSc.getPath());
+		} else {
+			LOGGER.info("skip file {} because not match the given pattern {}", path, initialResource.getAbsolutePath());
+		}	
+		
+		return Optional.ofNullable(newSc);
+	}
+
 	private boolean matchConfiguration(String initialName, String currentName) {	
 		final String regex = initialName.replace("?", ".?").replace("*", ".*?");		
 		final Pattern pattern = Pattern.compile(regex);
 		
 		return pattern.matcher(currentName).matches();
-	}
+	}	
 }

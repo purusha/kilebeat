@@ -18,6 +18,7 @@ import com.typesafe.config.ConfigFactory;
 import com.typesafe.config.ConfigObject;
 
 import lombok.Getter;
+import lombok.ToString;
 import lombok.extern.slf4j.Slf4j;
 
 @Slf4j
@@ -151,7 +152,9 @@ public class ConfigurationValidator {
 		}
 	}	
 	
+	@ToString
 	public class SingleConfiguration {		
+
 		@Getter
 		private final String path;
 		

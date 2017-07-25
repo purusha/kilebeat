@@ -2,6 +2,13 @@ package com.skillbill.at.configuration;
 
 import org.apache.commons.lang3.StringUtils;
 
+import lombok.EqualsAndHashCode;
+import lombok.Getter;
+import lombok.ToString;
+
+@Getter
+@ToString
+@EqualsAndHashCode
 public class KafkaEndPointConfiuration implements ConfigurationEndpoint {
 	private String queue;
 	private String url;
@@ -11,13 +18,5 @@ public class KafkaEndPointConfiuration implements ConfigurationEndpoint {
 		
 		this.url = split[0];
 		this.queue = split[1];
-	}
-	
-	public String getUrl() {
-		return url;
-	}
-	
-	public String getQueue() {
-		return queue;
-	}
+	}	
 }
