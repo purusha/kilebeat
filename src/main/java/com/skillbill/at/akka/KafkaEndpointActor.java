@@ -39,7 +39,7 @@ public class KafkaEndpointActor extends GuiceAbstractActor {
 				conf = c;
 				
 		        final Properties props = new Properties();
-		        props.put(ProducerConfig.BOOTSTRAP_SERVERS_CONFIG, c.getUrl());
+		        props.put(ProducerConfig.BOOTSTRAP_SERVERS_CONFIG, c.getHost());
 		        props.put(ProducerConfig.KEY_SERIALIZER_CLASS_CONFIG, "org.apache.kafka.common.serialization.ByteArraySerializer");
 		        props.put(ProducerConfig.VALUE_SERIALIZER_CLASS_CONFIG, "org.apache.kafka.common.serialization.StringSerializer");
 				

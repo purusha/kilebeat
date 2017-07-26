@@ -96,7 +96,8 @@ public class FileSystemWatcherActor extends GuiceAbstractActor {
 							consumedResource.add(path);
 							system.actorSelection("user/manager").tell(canHandle.get(), ActorRef.noSender());
 						} else {
-							LOGGER.info("on path {} ... can't run tail", path);
+							final String parentPath = new File(e.getKey().getPath()).getParent();
+							LOGGER.info("on path {} ... can't run tail", parentPath + "/" + path);
 						}
 					}
 				});

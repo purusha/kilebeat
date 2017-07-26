@@ -1,13 +1,10 @@
 package com.skillbill.at.akka;
 
 import static akka.actor.SupervisorStrategy.stop;
-import static com.skillbill.at.service.ActorNamesFactory.http;
-import static com.skillbill.at.service.ActorNamesFactory.kafka;
 
 import java.io.File;
 import java.io.FileNotFoundException;
 import java.nio.charset.Charset;
-import java.util.Optional;
 import java.util.concurrent.TimeUnit;
 
 import org.apache.commons.io.input.Tailer;
@@ -17,10 +14,9 @@ import com.skillbill.at.akka.dto.EndPointFailed;
 import com.skillbill.at.akka.dto.NewLineEvent;
 import com.skillbill.at.configuration.ConfigurationEndpoint;
 import com.skillbill.at.configuration.ConfigurationValidator.SingleConfiguration;
-import com.skillbill.at.configuration.HttpEndPointConfiuration;
-import com.skillbill.at.configuration.KafkaEndPointConfiuration;
 import com.skillbill.at.guice.GuiceAbstractActor;
 import com.skillbill.at.guice.GuiceActorUtils;
+import com.skillbill.at.service.Endpoint;
 
 import akka.actor.ActorRef;
 import akka.actor.OneForOneStrategy;
@@ -76,13 +72,14 @@ public class TailerActor extends GuiceAbstractActor implements TailerListener {
 			})
 			.match(EndPointFailed.class, f -> {
 				if (f.isExpired()) {
-					LOGGER.info("expired {}", f);
+					LOGGER.info("expired {}", f);					
+					final Endpoint endpoint = Endpoint.valueOf(f.getConf());
 										
 					router = router.addRoutee(buildRoutee(
 						f.getConf(),
 						getContext().actorOf(
-							GuiceActorUtils.makeProps(getContext().system(), f.isHttp() ? HttpEndpointActor.class : KafkaEndpointActor.class),
-							f.isHttp() ? http() : kafka()
+							GuiceActorUtils.makeProps(getContext().system(), endpoint.getActorClazz()),							
+							endpoint.actorName()
 						)											
 					));
 				} else {
@@ -92,36 +89,20 @@ public class TailerActor extends GuiceAbstractActor implements TailerListener {
 			})
 			.match(SingleConfiguration.class, c -> {
 				resource = new File(c.getPath());				
-				router = new Router(new BroadcastRoutingLogic());				
-
-				final Optional<ConfigurationEndpoint> httpExist = c.getEndpoints().stream()
-					.filter(ce -> ce instanceof HttpEndPointConfiuration)
-					.findFirst();
+				router = new Router(new BroadcastRoutingLogic());		
 				
-				if (httpExist.isPresent()) {							
+				for (ConfigurationEndpoint ce : c.getEndpoints()) {
+					final Endpoint endpoint = Endpoint.valueOf(ce);
+					
 					router = router.addRoutee(buildRoutee(
-						httpExist.get(),
+						ce,
 						getContext().actorOf(
-							GuiceActorUtils.makeProps(getContext().system(), HttpEndpointActor.class),
-							http()
+							GuiceActorUtils.makeProps(getContext().system(), endpoint.getActorClazz()),
+							endpoint.actorName()
 						)																	
-					));
+					));					
 				}
 
-				final Optional<ConfigurationEndpoint> kafkaExist = c.getEndpoints().stream()
-						.filter(ce -> ce instanceof KafkaEndPointConfiuration)
-						.findFirst();
-				
-				if(kafkaExist.isPresent()) {
-					router = router.addRoutee(buildRoutee(
-						kafkaExist.get(),
-						getContext().actorOf(
-							GuiceActorUtils.makeProps(getContext().system(), KafkaEndpointActor.class),
-							kafka()
-						)												
-					));
-				}		
-				
 				tailer = Tailer.create(
 					resource, Charset.forName("UTF-8"), this, DELAY, FROM_END, RE_OPEN, BUFFER_SIZE
 				);						

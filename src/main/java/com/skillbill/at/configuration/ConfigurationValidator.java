@@ -177,7 +177,7 @@ public class ConfigurationValidator {
 			final SingleConfiguration ret = new SingleConfiguration(path);
 			
 			endpoints.forEach(ep -> {				
-				final ConfigurationEndpoint dest = Endpoint.buildFake(ep);
+				final ConfigurationEndpoint dest = Endpoint.buildFakeEndpoint(ep);
 				
 				try {
 					BeanUtils.copyProperties(dest, ep);

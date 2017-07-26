@@ -14,13 +14,15 @@ exports = [
     {
         path = "/Users/power/Tmp/*"
         kafka {
-            queue = "localhost:666666@test"
+            host = "localhost:44444"
+            queue = "test"
         }
     }
     {
         path = "/Users/power/Tmp/q"
         kafka {
-            queue = "localhost:666666@test"
+            host = "localhost:44444"
+            queue = "test"
         }
     }	    	
 ]

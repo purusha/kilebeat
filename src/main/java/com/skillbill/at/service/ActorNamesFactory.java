@@ -8,14 +8,6 @@ public class ActorNamesFactory {
 		return "tailer" + rand();
 	}
 	
-	public static String http(){
-		return "http" + rand();
-	}
-
-	public static String kafka(){
-		return "kafka" + rand();
-	}
-		
 	private static String rand() {
 		return RandomStringUtils.random(4, false, true);
 	}
