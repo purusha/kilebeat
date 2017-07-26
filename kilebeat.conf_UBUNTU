@@ -12,6 +12,12 @@ exports = [
         }
     }
     {
+        path = "/home/developer/tmp/*"
+        kafka {
+            queue = "localhost:666666@test"
+        }
+    }    
+    {
         path = "/home/developer/tmp/q"
         kafka {
             queue = "localhost:666666@test"
