@@ -134,7 +134,7 @@ public class TailerActor extends GuiceAbstractActor implements TailerListener {
 		LOGGER.error("[ => ]", ex);
 		
 		if (ex instanceof FileNotFoundException) { //occur when file is deleted during tailer are working on!!
-			LOGGER.info("file to tail not found{}", resource);
+			LOGGER.info("file to tail not found {}", resource);
 			
 			//XXX stop before all the children
 			
