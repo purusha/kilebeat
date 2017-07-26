@@ -9,18 +9,15 @@ Type of output
 	http
 		> https support
 		> number of retry OR none
-		> path as Array
 		> bulk_max_size
 	
 	kafka
 		> number of retry OR none
-		> path as Array
 		> bulk_max_size
 			
 	redis
 		> number of retry OR none
-		> path as Array
 		> bulk_max_size
 			
-	logstash
-		> basic protocol 
+	fluentd
+		> simple logging into
