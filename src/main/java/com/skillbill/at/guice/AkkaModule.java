@@ -22,7 +22,6 @@ public class AkkaModule implements Module {
 		
 		binder
 			.bind(FileSystemWatcher.class)
-			.to(FileSystemWatcher.class)
 			.in(Singleton.class);
 		
 		binder

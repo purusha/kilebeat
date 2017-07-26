@@ -1,0 +1,8 @@
+exports = [
+    {
+        path = "/Users/power/Tmp/*"
+        http {
+            url = "http://localhost:55555/test"
+        }
+    }
+]
