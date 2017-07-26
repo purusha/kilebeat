@@ -1,6 +1,6 @@
 package com.skillbill.at.akka;
 
-import static com.skillbill.at.akka.ActorNamesFactory.*;
+import static com.skillbill.at.service.ActorNamesFactory.*;
 
 import java.util.ArrayList;
 import java.util.HashMap;

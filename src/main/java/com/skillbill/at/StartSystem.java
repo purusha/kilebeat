@@ -13,3 +13,21 @@ public class StartSystem {
 		injector.getInstance(KileBeatApplication.class).run();
     }
 }
+
+/*
+
+	Remove http/kafka types from:
+	
+	> com.skillbill.at.akka.TailerActor
+	> com.skillbill.at.akka.dto.EndPointFailed
+	> com.skillbill.at.configuration.ConfigurationValidator.SingleConfiguration
+	> com.skillbill.at.configuration.ConfigurationValidator.ValidationResponse
+	
+	
+	
+	-----------------------------------------
+		
+	Remove kilebeat.conf_* from GitHub
+	
+
+*/

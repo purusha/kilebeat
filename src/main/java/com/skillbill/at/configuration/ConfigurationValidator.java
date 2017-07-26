@@ -2,6 +2,7 @@ package com.skillbill.at.configuration;
 
 import java.io.File;
 import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.Collection;
 import java.util.Collections;
 import java.util.HashMap;
@@ -13,6 +14,7 @@ import java.util.stream.IntStream;
 
 import org.apache.commons.beanutils.BeanUtils;
 
+import com.skillbill.at.service.Endpoint;
 import com.typesafe.config.Config;
 import com.typesafe.config.ConfigFactory;
 import com.typesafe.config.ConfigObject;
@@ -110,16 +112,14 @@ public class ConfigurationValidator {
 		private void addConfiguration(int i, Config c) {
 			final SingleConfiguration build = new SingleConfiguration(c.getString("path"));
 			
-			final Config httpConfig = c.hasPath("http") ? c.getObject("http").toConfig() : null;								
-			if (httpConfig != null && !httpConfig.isEmpty()) {					
-				build.addEndpoint(new HttpEndPointConfiuration(httpConfig.getString("url")));
-			}
-			
-			final Config kafkaConfig = c.hasPath("kafka") ? c.getObject("kafka").toConfig() : null;
-			if (kafkaConfig != null && !kafkaConfig.isEmpty()) {
-				build.addEndpoint(new KafkaEndPointConfiuration(kafkaConfig.getString("queue")));
-			}					
-			
+			Arrays.stream(Endpoint.values()).forEach(e -> {				
+				final Config config = c.hasPath(e.getConfKey()) ? c.getObject(e.getConfKey()).toConfig() : null;
+				
+				if (config != null && !config.isEmpty()) {
+					build.addEndpoint(e.buildEndpoint(config));
+				}
+			});
+						
 			configs.put(i, build);
 		}	
 
@@ -177,7 +177,7 @@ public class ConfigurationValidator {
 			final SingleConfiguration ret = new SingleConfiguration(path);
 			
 			endpoints.forEach(ep -> {				
-				final ConfigurationEndpoint dest = emptyDto(ep);
+				final ConfigurationEndpoint dest = Endpoint.buildFake(ep);
 				
 				try {
 					BeanUtils.copyProperties(dest, ep);
@@ -189,16 +189,6 @@ public class ConfigurationValidator {
 			});
 			
 			return ret;			
-		}
-
-		private ConfigurationEndpoint emptyDto(ConfigurationEndpoint ep) {
-			if (ep instanceof HttpEndPointConfiuration) {
-				return new HttpEndPointConfiuration(null);
-			} else if (ep instanceof KafkaEndPointConfiuration) {
-				return new KafkaEndPointConfiuration(null);
-			} else {
-				throw new RuntimeException("XXX");
-			}
 		}
 	}	
 				

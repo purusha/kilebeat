@@ -1,8 +1,8 @@
 package com.skillbill.at.akka;
 
 import static akka.actor.SupervisorStrategy.stop;
-import static com.skillbill.at.akka.ActorNamesFactory.http;
-import static com.skillbill.at.akka.ActorNamesFactory.kafka;
+import static com.skillbill.at.service.ActorNamesFactory.http;
+import static com.skillbill.at.service.ActorNamesFactory.kafka;
 
 import java.io.File;
 import java.io.FileNotFoundException;

@@ -1,16 +1,20 @@
 package com.skillbill.at.configuration;
 
-import lombok.AllArgsConstructor;
+import com.typesafe.config.Config;
+
 import lombok.EqualsAndHashCode;
 import lombok.Getter;
 import lombok.ToString;
 
-@AllArgsConstructor
 @Getter
 @ToString
 @EqualsAndHashCode
 public class HttpEndPointConfiuration implements ConfigurationEndpoint {
 
 	private String path;
+	
+	public HttpEndPointConfiuration(Config config) {
+		this.path = config.getString("url");
+	}
 
 }

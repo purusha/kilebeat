@@ -1,4 +1,4 @@
-package com.skillbill.at.akka;
+package com.skillbill.at.service;
 
 import org.apache.commons.lang3.RandomStringUtils;
 

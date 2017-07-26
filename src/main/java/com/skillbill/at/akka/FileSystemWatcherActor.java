@@ -71,7 +71,7 @@ public class FileSystemWatcherActor extends GuiceAbstractActor {
 		return receiveBuilder()
 			.match(SingleConfiguration.class, sc -> {				
 				final File parentFile = new File(sc.getPath()).getParentFile();
-				LOGGER.info("parentFile {} for configuration {}", parentFile, sc);
+				LOGGER.debug("parentFile {} for configuration {}", parentFile, sc);
 
 				fsWatcher.watch(sc, parentFile);				
 			})
@@ -96,7 +96,7 @@ public class FileSystemWatcherActor extends GuiceAbstractActor {
 							consumedResource.add(path);
 							system.actorSelection("user/manager").tell(canHandle.get(), ActorRef.noSender());
 						} else {
-							LOGGER.info("on path {} ... can't run tail", canHandle.get().getPath());
+							LOGGER.info("on path {} ... can't run tail", path);
 						}
 					}
 				});
