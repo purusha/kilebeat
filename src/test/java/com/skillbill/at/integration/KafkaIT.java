@@ -1,4 +1,4 @@
-package com.skillbill.at.kilebeat;
+package com.skillbill.at.integration;
 
 import java.util.ArrayList;
 import java.util.Iterator;

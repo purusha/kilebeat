@@ -8,7 +8,6 @@ import lombok.ToString;
 @Getter
 @ToString
 public class NewLineEvent {
-
 	private final String line;
 	private final long ts;
 	private final String path;
@@ -17,6 +16,5 @@ public class NewLineEvent {
 		this.line = line;		
 		this.path = path.toString();
 		this.ts = System.currentTimeMillis();
-	}
-	
+	}	
 }

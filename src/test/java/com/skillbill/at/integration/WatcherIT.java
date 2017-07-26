@@ -1,4 +1,4 @@
-package com.skillbill.at.kilebeat;
+package com.skillbill.at.integration;
 
 import static java.nio.file.StandardWatchEventKinds.ENTRY_CREATE;
 

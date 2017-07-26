@@ -24,14 +24,8 @@ import lombok.ToString;
 import lombok.extern.slf4j.Slf4j;
 
 @Slf4j
-public class ConfigurationValidator {	
-	private File configuration;
-
-	public ConfigurationValidator(File configuration) {
-		this.configuration = configuration;
-	}	
-	
-	public ValidationResponse isValid() {
+public final class ConfigurationValidator {	
+	public ValidationResponse isValid(File configuration) {
 		if (!configuration.exists()) {
 			throw new IllegalArgumentException("configuration file absent");
 		}
@@ -92,7 +86,7 @@ public class ConfigurationValidator {
 		return response;
 	}
 	
-	public class ValidationResponse {	
+	public final class ValidationResponse {	
 		private final Map<Integer, SingleConfiguration> configs;
 		private final Map<Integer, List<String>> errors;
 
@@ -138,7 +132,7 @@ public class ConfigurationValidator {
 		}
 	}	
 	
-	public class ExportsConfiguration {
+	public final class ExportsConfiguration {
 		private final SortedMap<Integer, SingleConfiguration> exports;
 		
 		private ExportsConfiguration(SortedMap<Integer, SingleConfiguration> e) {
@@ -148,12 +142,11 @@ public class ConfigurationValidator {
 		//return in order by key !!?
 		public Collection<SingleConfiguration> getExports() { 			
 			return exports.values();
-			//return exports.entrySet().stream().map(e -> exports.get(e)).collect(Collectors.toList());
 		}
 	}	
 	
 	@ToString
-	public class SingleConfiguration {		
+	public final class SingleConfiguration {		
 
 		@Getter
 		private final String path;
