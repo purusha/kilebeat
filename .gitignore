@@ -9,6 +9,5 @@ target/
 *.iml
 *.ipr
 *.iws
-mail-server/out
 .pydevproject
-node_modules/
+*.conf
