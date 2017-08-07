@@ -11,3 +11,4 @@ target/
 *.iws
 .pydevproject
 *.conf
+.DS_Store

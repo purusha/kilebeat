@@ -1,0 +1,8 @@
+exports = [<% @elements.each_with_index do |e, index| %>
+    {
+        path = "/Users/power/Tmp/<%= e %>"
+        http {
+            url = "http://localhost:55555/<%= e %>"
+        }
+    }<% if index != @elements.length - 1 %>,<% end %>	
+<% end %>]
