@@ -1,10 +1,12 @@
+#!/usr/bin/env ruby
 require 'securerandom'
 require 'erb'
+require './tool-http'
 
 print 'Enter number of files: [10]'
 files = gets.chomp
 if files.to_s.empty?
-	files = 9
+	files = 10
 end
 
 print 'Enter root of files: [/Users/power/Tmp/]'
@@ -19,7 +21,7 @@ Dir.foreach(root) do |file|
 	end
 end
 
-for number in 0..files
+for number in 1..files
 	file_name = SecureRandom.hex
 	
 	File.open(root + file_name, 'w') do |f|
@@ -44,6 +46,8 @@ File.delete(File.readlink("/Users/power/Dev/github/kilebeat/kilebeat.conf"))
 File.unlink("/Users/power/Dev/github/kilebeat/kilebeat.conf")
 File.symlink(conf_file, "/Users/power/Dev/github/kilebeat/kilebeat.conf")
 
+http_tool = ToolHttp.new
+
 #REPL start Here
 loop do
 	print '$> '
@@ -54,9 +58,14 @@ loop do
   	when /\Ahelp\z/i
     	#puts Application::Console.help_text
     	puts "help"
-	when /\Aopen\z/i
-    	#Application::Task.open params.first
-    	puts "open"
+	when /\Ahttp\z/i
+    	if "start" == params.first
+			http_tool.start
+			puts "http server started"    	    	
+    	elsif "stop" == params.first
+			http_tool.stop
+			puts "http server stopped"    	    	    	
+    	end    	    	
   	when /\Ado\z/i
     	#Application::Action.perform *params
     	puts "do on #{params}"
