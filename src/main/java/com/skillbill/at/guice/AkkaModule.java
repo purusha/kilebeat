@@ -17,7 +17,8 @@ public class AkkaModule implements Module {
 		final ValidationResponse validResp = new ConfigurationValidator().isValid(new File(property));		
 		
 		if (!validResp.isValid()) {
-			throw new RuntimeException("config.file is INVALID");
+			System.err.println("config.file is INVALID ... exit!!?");
+			System.exit(-1);
 		}
 		
 		binder
