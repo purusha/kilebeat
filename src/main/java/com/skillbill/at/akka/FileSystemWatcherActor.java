@@ -39,7 +39,7 @@ public class FileSystemWatcherActor extends GuiceAbstractActor {
 			getSelf(), SCHEDULATION_WATCH, system.dispatcher(), getSelf());
 		
 		config.getExports().forEach(obj -> {			
-			final File resource = new File(obj.getPath());
+			final File resource = obj.getPath();
 			
 			if (resource.exists()) {
 				LOGGER.info("on path {} ... run tail", resource);				
@@ -70,7 +70,7 @@ public class FileSystemWatcherActor extends GuiceAbstractActor {
 	public Receive createReceive() {
 		return receiveBuilder()
 			.match(SingleConfiguration.class, sc -> {				
-				final File parentFile = new File(sc.getPath()).getParentFile();
+				final File parentFile = sc.getPath().getParentFile();
 				LOGGER.debug("parentFile {} for configuration {}", parentFile, sc);
 
 				fsWatcher.watch(sc, parentFile);				
@@ -96,7 +96,7 @@ public class FileSystemWatcherActor extends GuiceAbstractActor {
 							consumedResource.add(path);
 							system.actorSelection("user/manager").tell(canHandle.get(), ActorRef.noSender());
 						} else {
-							final String parentPath = new File(e.getKey().getPath()).getParent();
+							final String parentPath = e.getKey().getPath().getParent();
 							LOGGER.info("on path {} ... can't run tail", parentPath + "/" + path);
 						}
 					}
@@ -112,7 +112,7 @@ public class FileSystemWatcherActor extends GuiceAbstractActor {
 
 	private Optional<SingleConfiguration> isRelated(WatchEvent<?> we, SingleConfiguration initialConf) {
 		final Path context = (Path)we.context();	
-		final File initialResource = new File(initialConf.getPath());				
+		final File initialResource = initialConf.getPath();				
 		final String currentName = context.toFile().getName();
 		
 		final SingleConfiguration newSc;		

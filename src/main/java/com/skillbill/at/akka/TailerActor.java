@@ -2,7 +2,6 @@ package com.skillbill.at.akka;
 
 import static akka.actor.SupervisorStrategy.stop;
 
-import java.io.File;
 import java.io.FileNotFoundException;
 import java.nio.charset.Charset;
 import java.util.concurrent.TimeUnit;
@@ -37,8 +36,8 @@ public class TailerActor extends GuiceAbstractActor implements TailerListener {
 	private static final int BUFFER_SIZE = 1000;
 	private static final boolean FROM_END = true;
 	private static final boolean RE_OPEN = true;
-	
-	private File resource;
+
+	private SingleConfiguration conf;
 	private Router router;
 	private Tailer tailer;
 		
@@ -60,8 +59,11 @@ public class TailerActor extends GuiceAbstractActor implements TailerListener {
 	public Receive createReceive() {
 		return receiveBuilder()
 			.match(NewLineEvent.class, s -> {
-				//LOGGER.info("[row] {}", s);				
-				router.route(s, ActorRef.noSender());
+				//LOGGER.info("[row] {}", s);
+				
+				if (conf.getRules().mustBeSent(s.getLine())) {
+					router.route(s, ActorRef.noSender());	
+				}
 			})
 			.match(Terminated.class, t -> {				
 				final ActorRef fail = t.actor();
@@ -87,8 +89,8 @@ public class TailerActor extends GuiceAbstractActor implements TailerListener {
 					getContext().parent().tell(f, getSelf());
 				}
 			})
-			.match(SingleConfiguration.class, c -> {
-				resource = new File(c.getPath());				
+			.match(SingleConfiguration.class, c -> {	
+				conf = c;
 				router = new Router(new BroadcastRoutingLogic());		
 				
 				for (ConfigurationEndpoint ce : c.getEndpoints()) {
@@ -104,7 +106,7 @@ public class TailerActor extends GuiceAbstractActor implements TailerListener {
 				}
 
 				tailer = Tailer.create(
-					resource, Charset.forName("UTF-8"), this, DELAY, FROM_END, RE_OPEN, BUFFER_SIZE
+					conf.getPath(), Charset.forName("UTF-8"), this, DELAY, FROM_END, RE_OPEN, BUFFER_SIZE
 				);						
 			})
 			.matchAny(o -> {
@@ -125,7 +127,7 @@ public class TailerActor extends GuiceAbstractActor implements TailerListener {
 	@Override
 	public void handle(String line) {				
 		getSelf().tell(
-			new NewLineEvent(line, resource.toPath()), ActorRef.noSender()
+			new NewLineEvent(line, conf.getPath().toPath()), ActorRef.noSender()
 		);
 	}
 
@@ -134,7 +136,7 @@ public class TailerActor extends GuiceAbstractActor implements TailerListener {
 		LOGGER.error("[ => ]", ex);
 		
 		if (ex instanceof FileNotFoundException) { //occur when file is deleted during tailer are working on!!
-			LOGGER.info("file to tail not found {}", resource);
+			LOGGER.info("file to tail not found {}", conf.getPath());
 			
 			//XXX stop before all the children
 			
@@ -149,12 +151,12 @@ public class TailerActor extends GuiceAbstractActor implements TailerListener {
 			1, 
 			Duration.create(1, TimeUnit.MINUTES), 
 			DeciderBuilder.
-				match(Exception.class, e -> stop()).
+				match(Exception.class, e -> stop())
 //	        	match(ArithmeticException.class, e -> resume()).
 //	        	match(NullPointerException.class, e -> restart()).
 //	        	match(IllegalArgumentException.class, e -> stop()).
-//	        	matchAny(o -> escalate()).
-				build()
+//	        	matchAny(o -> escalate())
+				.build()
         );		
 	}
 

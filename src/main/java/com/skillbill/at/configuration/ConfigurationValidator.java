@@ -14,6 +14,8 @@ import java.util.Set;
 import java.util.SortedMap;
 import java.util.TreeMap;
 import java.util.concurrent.TimeUnit;
+import java.util.regex.Pattern;
+import java.util.regex.PatternSyntaxException;
 import java.util.stream.IntStream;
 
 import org.apache.commons.beanutils.BeanUtils;
@@ -63,25 +65,50 @@ public final class ConfigurationValidator {
 				 * validation starts
 				 */
 				
-				if (!eConfig.hasPath("path")) {
+				boolean hasPath = eConfig.hasPath("path");
+				
+				if (!hasPath) {
 					response.addError(i, String.format("%d element does not contains %s", i, "path"));
 				}
 				
-				if (!eConfig.hasPath("http") && !eConfig.hasPath("kafka")) {
-					response.addError(i, String.format("%d element does not contains both %s and %s", i, "http", "kafka"));
-				}
-
-				if (eConfig.hasPath("http")) {
-					if (!eConfig.hasPath("http.url")) {
-						response.addError(i, String.format("%d element does not contains %s", i, "http.url"));
+				boolean hasHttp = eConfig.hasPath("http");
+				boolean hasKafka = eConfig.hasPath("kafka");
+				
+				if (!hasHttp && !hasKafka) {
+					response.addError(i, String.format("%d element does not contains both %s and %s ... one is mandatory", i, "http", "kafka"));
+				} else {
+					if (hasHttp) {
+						if (!eConfig.hasPath("http.url")) {
+							response.addError(i, String.format("%d element does not contains %s", i, "http.url"));
+						}
 					}
-				}
 
-				if (eConfig.hasPath("kafka")) {
-					if (!eConfig.hasPath("kafka.queue")) {
-						response.addError(i, String.format("%d element does not contains %s", i, "kafka.queue"));
+					if (hasKafka) {
+						if (!eConfig.hasPath("kafka.queue")) {
+							response.addError(i, String.format("%d element does not contains %s", i, "kafka.queue"));
+						}					
 					}					
-				}		
+				}
+				
+				boolean hasSendIfMatch = eConfig.hasPath("send-if-match");
+				boolean hasSendIfNotMatch = eConfig.hasPath("send-if-not-match");
+				
+				if (hasSendIfMatch && hasSendIfNotMatch) {
+					response.addError(i, String.format("%d element contains both %s and %s ... only one expected", i, "send-if-match", "send-if-not-match"));					
+				} else {
+					if (hasSendIfMatch) {
+						if (! isPattern(eConfig.getString("send-if-match"))) {
+							response.addError(i, String.format("%d element on 'send-if-match' contains not valid pattern", i));							
+						}
+					}
+					
+					if (hasSendIfNotMatch) {
+						if (! isPattern(eConfig.getString("send-if-not-match"))) {
+							response.addError(i, String.format("%d element on 'send-if-not-match' contains not valid pattern", i));
+						}						
+					}					
+				}
+				
 				
 				/*
 				 * finally add Configuration 
@@ -96,6 +123,16 @@ public final class ConfigurationValidator {
 		return response;
 	}
 	
+	private boolean isPattern(String regex) {
+		try {
+			Pattern.compile(regex);
+			
+			return true;
+		} catch (PatternSyntaxException e) {
+			return false;
+		}		
+	}
+
 	public final class ValidationResponse {	
 		private final Map<Integer, SingleConfiguration> configs;
 		private final Map<Integer, List<String>> errors;
@@ -106,7 +143,7 @@ public final class ConfigurationValidator {
 		}
 
 		private void addError(int i, String e) {
-			if (errors.containsKey(i)) {
+			if (! errors.containsKey(i)) {
 				errors.put(i, new ArrayList<>());
 			}
 			
@@ -114,7 +151,17 @@ public final class ConfigurationValidator {
 		}
 
 		private void addConfiguration(int i, Config c) {
-			final SingleConfiguration build = new SingleConfiguration(c.getString("path"));
+			final SendRules rules = new SendRules();
+			
+			if (c.hasPath("send-if-match")) {
+				rules.addMatch(Pattern.compile(c.getString("send-if-match")));
+			}
+			
+			if (c.hasPath("send-if-not-match")) {
+				rules.addNotMatch(Pattern.compile(c.getString("send-if-not-match")));
+			}					
+			
+			final SingleConfiguration build = new SingleConfiguration(c.getString("path"), rules);
 			
 			Arrays.stream(Endpoint.values()).forEach(e -> {				
 				final Config config = c.hasPath(e.getConfKey()) ? c.getObject(e.getConfKey()).toConfig() : null;
@@ -123,7 +170,7 @@ public final class ConfigurationValidator {
 					build.addEndpoint(e.buildEndpoint(config));
 				}
 			});
-						
+									
 			configs.put(i, build);
 		}	
 
@@ -156,15 +203,40 @@ public final class ConfigurationValidator {
 	}	
 	
 	@ToString
-	public final class SingleConfiguration {		
-
-		@Getter
-		private final String path;
+	public final class SendRules {		
+		private Pattern match;
+		private Pattern notMatch;
 		
+		public void addMatch(Pattern compile) {
+			this.match = compile;
+		}
+
+		public void addNotMatch(Pattern compile) {
+			this.notMatch = compile;
+		}
+		
+		public boolean mustBeSent(String line) {
+			if (match != null) {
+				return match.matcher(line).find();
+			} else if (notMatch != null) {
+				return !notMatch.matcher(line).find();
+			} else {
+				return true;
+			}
+		}
+	}
+	
+	@ToString
+	public final class SingleConfiguration {		
+		private final String path;
 		private final List<ConfigurationEndpoint> endpoints;
 		
-		private SingleConfiguration(String path) {
+		@Getter
+		private final SendRules rules;
+		
+		private SingleConfiguration(String path, SendRules rules) {
 			this.path = path;
+			this.rules = rules;
 			this.endpoints = new ArrayList<>();
 		}
 		
@@ -175,9 +247,13 @@ public final class ConfigurationValidator {
 		public List<ConfigurationEndpoint> getEndpoints() {
 			return Collections.unmodifiableList(endpoints);
 		}
+		
+		public File getPath() {
+			return new File(path);
+		}
 
 		public SingleConfiguration makeCopy(String path) {
-			final SingleConfiguration ret = new SingleConfiguration(path);
+			final SingleConfiguration ret = new SingleConfiguration(path, rules);
 			
 			endpoints.forEach(ep -> {				
 				final ConfigurationEndpoint dest = buildFakeEndpoint(ep);

@@ -12,12 +12,14 @@ Example configuration and usage:
 exports = [
     {
         path = "/Users/power/Tmp/a"
+        send-if-match = "^\\d.*"	#OPTIONAL 		
         http {
             url = "http://localhost:55555/log"
         }
     }
     {
         path = "/Users/power/Tmp/*.log"
+        send-if-not-match = ".*[1-9].*"		#OPTIONAL
         http {
             url = "http://localhost:55555/test"
         }
