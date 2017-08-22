@@ -1,6 +1,6 @@
 require 'webrick'
 
-class Echo < WEBrick::HTTPServlet::AbstractServlet
+class Always200 < WEBrick::HTTPServlet::AbstractServlet
   def do_GET(request, response)
     puts request
     response.status = 200
@@ -21,19 +21,23 @@ class ToolHttp
   def start  
 	@http_t = Thread.new {
 		@server = WEBrick::HTTPServer.new(:Port => 55555)
-		@server.mount "/", Echo  	
+		@server.mount "/", Always200  	
 		@server.start    	
 	}  
   end
   
   def stop
-  	@server.shutdown
-  	sleep 3
+  	if !@server.nil?
+  	  	@server.shutdown
+  		sleep 3  	
+  	end 
   	
-  	Thread.kill(@http_t)
-  	sleep 2
+  	if !@http_t.nil?
+	  	Thread.kill(@http_t)
+	  	sleep 2
+  	end
 
-  	@http_t = nil
-  	@server = nil  	
+	@server = nil
+  	@http_t = nil  	  	
   end
 end

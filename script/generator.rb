@@ -64,7 +64,9 @@ loop do
 			puts "http server started"    	    	
     	elsif "stop" == params.first
 			http_tool.stop
-			puts "http server stopped"    	    	    	
+			puts "http server stopped"
+	  	else 
+  			puts 'Invalid http command'			    	    	    
     	end    	    	
   	when /\Ado\z/i
     	#Application::Action.perform *params
