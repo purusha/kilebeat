@@ -23,10 +23,10 @@ end
 
 for number in 1..files
 	file_name = SecureRandom.hex
-	
+
 	File.open(root + file_name, 'w') do |f|
 		f.print file_name
-	end	
+	end
 end
 
 print 'Enter path where to write configuration file: [/Users/power/Dev/github/kilebeat/confs/]'
@@ -35,14 +35,14 @@ if conf_file.to_s.empty?
 	conf_file = "/Users/power/Dev/github/kilebeat/confs/"
 end
 conf_file += SecureRandom.hex
-puts 'New configuration file will be write in ' + conf_file 
+puts 'New configuration file will be write in ' + conf_file
 
 File.open(conf_file, 'w') do |f|
-	@elements = Dir.foreach(root).reject {|file| file.to_s == "." or file.to_s == ".."} 
+	@elements = Dir.foreach(root).reject {|file| file.to_s == "." or file.to_s == ".."}
 	f.print ERB.new(File.open("template.erb", 'r').read).result(binding)
-end	
+end
 
-File.delete(File.readlink("/Users/power/Dev/github/kilebeat/kilebeat.conf"))
+#File.delete(File.readlink("/Users/power/Dev/github/kilebeat/kilebeat.conf"))
 File.unlink("/Users/power/Dev/github/kilebeat/kilebeat.conf")
 File.symlink(conf_file, "/Users/power/Dev/github/kilebeat/kilebeat.conf")
 
@@ -53,7 +53,7 @@ loop do
 	print '$> '
 	input = gets.chomp
 	command, *params = input.split /\s/
-	
+
   	case command
   	when /\Ahelp\z/i
     	#puts Application::Console.help_text
@@ -61,17 +61,17 @@ loop do
 	when /\Ahttp\z/i
     	if "start" == params.first
 			http_tool.start
-			puts "http server started"    	    	
+			puts "http server started"
     	elsif "stop" == params.first
 			http_tool.stop
 			puts "http server stopped"
-	  	else 
-  			puts 'Invalid http command'			    	    	    
-    	end    	    	
+	  	else
+  			puts 'Invalid http command'
+    	end
   	when /\Ado\z/i
     	#Application::Action.perform *params
     	puts "do on #{params}"
-  	else 
+  	else
   		puts 'Invalid command'
   	end
 end
