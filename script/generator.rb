@@ -3,18 +3,23 @@ require 'securerandom'
 require 'erb'
 require './tool-http'
 
-print 'Enter number of files: [10]'
+http_tool = ToolHttp.new
+
+puts 'Enter number of files: [10]'
 files = gets.chomp
 if files.to_s.empty?
 	files = 10
+else
+	files = files.to_i
 end
 
-print 'Enter root of files: [/Users/power/Tmp/]'
+puts 'Enter root of files: [/Users/power/Tmp/]'
 root = gets.chomp
 if root.to_s.empty?
 	root = "/Users/power/Tmp/"
 end
 
+# delete all files generated in the previous execution
 Dir.foreach(root) do |file|
 	if ((file.to_s != ".") and (file.to_s != ".."))
 		File.delete("#{root}/#{file}")
@@ -29,7 +34,7 @@ for number in 1..files
 	end
 end
 
-print 'Enter path where to write configuration file: [/Users/power/Dev/github/kilebeat/confs/]'
+puts 'Enter path where to write configuration file: [/Users/power/Dev/github/kilebeat/confs/]'
 conf_file = gets.chomp
 if conf_file.to_s.empty?
 	conf_file = "/Users/power/Dev/github/kilebeat/confs/"
@@ -46,32 +51,30 @@ end
 File.unlink("/Users/power/Dev/github/kilebeat/kilebeat.conf")
 File.symlink(conf_file, "/Users/power/Dev/github/kilebeat/kilebeat.conf")
 
-http_tool = ToolHttp.new
-
 #REPL start Here
 loop do
 	print '$> '
 	input = gets.chomp
 	command, *params = input.split /\s/
 
-  	case command
+	case command
   	when /\Ahelp\z/i
     	#puts Application::Console.help_text
     	puts "help"
-	when /\Ahttp\z/i
-    	if "start" == params.first
-			http_tool.start
-			puts "http server started"
-    	elsif "stop" == params.first
-			http_tool.stop
-			puts "http server stopped"
+		when /\Ahttp\z/i
+	    	if "start" == params.first
+				http_tool.start
+				puts "http server started"
+	    	elsif "stop" == params.first
+				http_tool.stop
+				puts "http server stopped"
+		  	else
+	  			puts 'Invalid http command'
+	    	end
+	  	when /\Ado\z/i
+	    	#Application::Action.perform *params
+	    	puts "do on #{params}"
 	  	else
-  			puts 'Invalid http command'
-    	end
-  	when /\Ado\z/i
-    	#Application::Action.perform *params
-    	puts "do on #{params}"
-  	else
-  		puts 'Invalid command'
+	  		puts 'Invalid command'
   	end
 end
