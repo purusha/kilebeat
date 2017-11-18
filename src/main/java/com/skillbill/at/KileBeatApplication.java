@@ -43,7 +43,7 @@ public class KileBeatApplication {
         final GuiceExtensionImpl guiceExtension = GuiceExtension.provider.get(system);
         guiceExtension.setInjector(injector);
         
-        //used only to see which actor's are available into ActorSystem Application
+        //XXX start only in development environment
         system
         	.eventStream()
         	.subscribe(

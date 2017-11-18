@@ -15,15 +15,24 @@ import akka.actor.DeadLetter;
 import akka.actor.Identify;
 import lombok.extern.slf4j.Slf4j;
 
+/*
+ * this actor is only for development purpose ... !!?
+ *  
+ * is used for identify all actors availabe in a particular time when a message arrived to the DeadLetter.
+ */
+
 @Slf4j
 public class RetrieveActors extends GuiceAbstractActor {
+	
+	//use a different file for logging result of find
 	private final static Logger LOG = LoggerFactory.getLogger("internal");
+	
 	private final String identifyId = RandomStringUtils.randomNumeric(42);	
 	
     @Override
     public void preStart() throws Exception {
     	super.preStart();
-    	LOGGER.info("start {} with parent {}", getSelf().path(), getContext().parent());
+    	LOGGER.info("start {} with parent {}", getSelf().path(), getContext().parent().path());
     }
 
 	@Override
