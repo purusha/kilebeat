@@ -1,5 +1,7 @@
 package com.skillbill.at;
 
+import com.google.inject.Inject;
+import com.google.inject.Injector;
 import com.skillbill.at.akka.ExportsManagerActor;
 import com.skillbill.at.akka.FileSystemWatcherActor;
 import com.skillbill.at.akka.RetrieveActors;
@@ -8,13 +10,20 @@ import com.skillbill.at.guice.GuiceExtension;
 import com.skillbill.at.guice.GuiceExtensionImpl;
 import com.typesafe.config.ConfigFactory;
 
-import akka.actor.ActorRef;
 import akka.actor.ActorSystem;
 import akka.actor.DeadLetter;
 import lombok.extern.slf4j.Slf4j;
 
 @Slf4j
 public class KileBeatApplication {
+	
+	private Injector injector;
+
+	@Inject
+	public KileBeatApplication(Injector injector) {
+		this.injector = injector;
+	}
+	
 	public void run() throws Exception {
 		
         //create system
@@ -32,15 +41,19 @@ public class KileBeatApplication {
 
         //configure Guice
         final GuiceExtensionImpl guiceExtension = GuiceExtension.provider.get(system);
-        guiceExtension.setInjector(StartSystem.injector);
-
-        final ActorRef retrieveActor = system.actorOf(
-    		GuiceActorUtils.makeProps(system, RetrieveActors.class), "retrieve"
-		);        
+        guiceExtension.setInjector(injector);
         
-        system.eventStream().subscribe(retrieveActor, DeadLetter.class);
+        //used only to see which actor's are available into ActorSystem Application
+        system
+        	.eventStream()
+        	.subscribe(
+    	        system.actorOf(
+	        		GuiceActorUtils.makeProps(system, RetrieveActors.class), "retrieve"
+	    		), 
+    			DeadLetter.class
+			);
 
-        //XXX create before watcher because manager use watcher internally
+        //XXX create before watcher because ... manager use watcher internally
         system.actorOf(
     		GuiceActorUtils.makeProps(system, ExportsManagerActor.class), "manager"
 		);        

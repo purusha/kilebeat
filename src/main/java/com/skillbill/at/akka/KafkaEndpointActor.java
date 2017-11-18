@@ -23,29 +23,29 @@ import lombok.extern.slf4j.Slf4j;
 public class KafkaEndpointActor extends GuiceAbstractActor {
 	
 	private final ObjectMapper om;
-	private Producer<String, String> producer;	
-	private KafkaEndPointConfiuration conf;
+	private final Producer<String, String> producer;	
+	private final KafkaEndPointConfiuration conf;
 	
 	@Inject
-	public KafkaEndpointActor() {				
-        //inject me please !!?        
-        om = new ObjectMapper();        
+	public KafkaEndpointActor(KafkaEndPointConfiuration conf) {				                
+        final Properties props = new Properties();
+        props.put(ProducerConfig.BOOTSTRAP_SERVERS_CONFIG, conf.getHost());
+        props.put(ProducerConfig.KEY_SERIALIZER_CLASS_CONFIG, "org.apache.kafka.common.serialization.ByteArraySerializer");
+        props.put(ProducerConfig.VALUE_SERIALIZER_CLASS_CONFIG, "org.apache.kafka.common.serialization.StringSerializer");
+		
+        this.producer = new KafkaProducer<String, String>(props);				    
+        this.om = new ObjectMapper();
+        this.conf = conf;        
 	}
 	
 	@Override
 	public Receive createReceive() {
 		return receiveBuilder()
-			.match(KafkaEndPointConfiuration.class, c -> {
-				conf = c;
-				
-		        final Properties props = new Properties();
-		        props.put(ProducerConfig.BOOTSTRAP_SERVERS_CONFIG, c.getHost());
-		        props.put(ProducerConfig.KEY_SERIALIZER_CLASS_CONFIG, "org.apache.kafka.common.serialization.ByteArraySerializer");
-		        props.put(ProducerConfig.VALUE_SERIALIZER_CLASS_CONFIG, "org.apache.kafka.common.serialization.StringSerializer");
-				
-		        producer = new KafkaProducer<String, String>(props);				
-			})
 			.match(NewLineEvent.class, s -> send(s))
+			.matchAny(o -> {
+				LOGGER.warn("not handled message", o);
+				unhandled(o);
+			})			
 			.build();
 	}
 	

@@ -106,6 +106,7 @@ public class FileSystemWatcherActor extends GuiceAbstractActor {
 			})
 			.matchAny(o -> {
 				LOGGER.warn("not handled message", o);
+				unhandled(o);
 			})			
 			.build();
 	}

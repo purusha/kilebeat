@@ -1,6 +1,6 @@
 package com.skillbill.at.akka;
 
-import static com.skillbill.at.service.ActorNamesFactory.*;
+import static com.skillbill.at.service.ActorNamesFactory.tailer;
 
 import java.util.ArrayList;
 import java.util.HashMap;
@@ -14,11 +14,11 @@ import com.google.inject.Inject;
 import com.skillbill.at.akka.dto.EndPointFailed;
 import com.skillbill.at.configuration.ConfigurationValidator.SingleConfiguration;
 import com.skillbill.at.guice.GuiceAbstractActor;
-import com.skillbill.at.guice.GuiceActorUtils;
 
 import akka.actor.ActorRef;
 import akka.actor.ActorSystem;
 import akka.actor.Cancellable;
+import akka.actor.Props;
 import lombok.extern.slf4j.Slf4j;
 import scala.concurrent.duration.FiniteDuration;
 
@@ -68,15 +68,15 @@ public class ExportsManagerActor extends GuiceAbstractActor {
 				final Set<ActorRef> actorRefs = association.keySet();											
 				
 				actorRefs.forEach(childActor -> {						
-					final List<EndPointFailed> actorFails = association.get(childActor);
-					LOGGER.info("### found {} failed conf for {}", actorFails.size(), childActor);
+					final List<EndPointFailed> fails = association.get(childActor);
+					LOGGER.info("### found {} failed conf for {}", fails.size(), childActor);
 					
-					for(int i = 0; i < actorFails.size(); i++) {						
-						final EndPointFailed configuration = actorFails.get(i);
+					for(int i = 0; i < fails.size(); i++) {						
+						final EndPointFailed epf = fails.get(i);
 						
-						if (configuration.isExpired()) {														
-							childActor.tell(configuration, ActorRef.noSender());
-							actorFails.remove(i);
+						if (epf.isExpired()) {														
+							childActor.tell(epf, ActorRef.noSender());
+							fails.remove(i);
 						}						
 					}
 				});
@@ -88,19 +88,17 @@ public class ExportsManagerActor extends GuiceAbstractActor {
 						.collect(Collectors.toList())
 				);
 			})
-			.match(SingleConfiguration.class, c -> {
-				//create child
-				final ActorRef actorOf = getContext().actorOf(
-					GuiceActorUtils.makeProps(getContext().system(), TailerActor.class), tailer()
+			.match(SingleConfiguration.class, sc -> {
+				getContext().actorOf(
+					Props.create(TailerActor.class, sc), tailer()
 				);
-				
-				//configure
-				actorOf.tell(c, ActorRef.noSender());
-				
-				//getContext().watch(actorOf);				
+
+				//XXX this actor should be watched ? 
+				//getContext().watch(tailActor);
 			})
 			.matchAny(o -> {
 				LOGGER.warn("not handled message", o);
+				unhandled(o);
 			})
 			.build();							
 	}

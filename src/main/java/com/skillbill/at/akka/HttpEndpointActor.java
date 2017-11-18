@@ -22,23 +22,26 @@ import lombok.extern.slf4j.Slf4j;
 public class HttpEndpointActor extends GuiceAbstractActor {
 	
 	private final Client client;
-	private HttpEndPointConfiuration conf;
+	private final HttpEndPointConfiuration conf;
 	
 	@Inject
-	public HttpEndpointActor() {
+	public HttpEndpointActor(HttpEndPointConfiuration conf) {
         final ClientConfig cc = new DefaultClientConfig();  
         cc.getFeatures().put(JSONConfiguration.FEATURE_POJO_MAPPING, Boolean.TRUE);
         cc.getSingletons().add(new JacksonJsonProvider());
         
-        //inject me please !!?
-        client = Client.create(cc);				
+        this.client = Client.create(cc);				        
+        this.conf = conf;
 	}
 	
 	@Override
 	public Receive createReceive() {
 		return receiveBuilder()
-			.match(HttpEndPointConfiuration.class, c -> conf = c)
 			.match(NewLineEvent.class, s -> send(s))
+			.matchAny(o -> {
+				LOGGER.warn("not handled message", o);
+				unhandled(o);
+			})			
 			.build();
 	}
 	

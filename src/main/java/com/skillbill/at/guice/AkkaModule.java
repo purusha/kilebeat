@@ -13,6 +13,7 @@ import com.skillbill.at.service.FileSystemWatcher;
 public class AkkaModule implements Module {
 	@Override
 	public void configure(Binder binder) {
+		
 		final String property = System.getProperty("config.file", "kilebeat.conf");				
 		final ValidationResponse validResp = new ConfigurationValidator().isValid(new File(property));		
 		
@@ -27,6 +28,7 @@ public class AkkaModule implements Module {
 		
 		binder
 			.bind(ExportsConfiguration.class)
-			.toInstance(validResp.getConfig());					
+			.toInstance(validResp.getConfig());
+		
 	}
 }

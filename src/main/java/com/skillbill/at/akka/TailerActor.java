@@ -14,12 +14,12 @@ import com.skillbill.at.akka.dto.NewLineEvent;
 import com.skillbill.at.configuration.ConfigurationEndpoint;
 import com.skillbill.at.configuration.ConfigurationValidator.SingleConfiguration;
 import com.skillbill.at.guice.GuiceAbstractActor;
-import com.skillbill.at.guice.GuiceActorUtils;
 import com.skillbill.at.service.Endpoint;
 
 import akka.actor.ActorRef;
 import akka.actor.OneForOneStrategy;
 import akka.actor.PoisonPill;
+import akka.actor.Props;
 import akka.actor.SupervisorStrategy;
 import akka.actor.Terminated;
 import akka.japi.pf.DeciderBuilder;
@@ -37,9 +37,24 @@ public class TailerActor extends GuiceAbstractActor implements TailerListener {
 	private static final boolean FROM_END = true;
 	private static final boolean RE_OPEN = true;
 
-	private SingleConfiguration conf;
+	private final SingleConfiguration conf;	
+	private final Tailer tailer;
 	private Router router;
-	private Tailer tailer;
+	
+	public TailerActor(SingleConfiguration conf) {
+		this.conf = conf;
+		this.router = new Router(new BroadcastRoutingLogic());		
+		
+		for (ConfigurationEndpoint ce : conf.getEndpoints()) {
+			final Endpoint endpoint = Endpoint.valueOf(ce);
+			
+			router = router.addRoutee(buildRoutee(ce, endpoint));					
+		}
+
+		this.tailer = Tailer.create(
+			conf.getPath(), Charset.forName("UTF-8"), this, DELAY, FROM_END, RE_OPEN, BUFFER_SIZE
+		);								
+	}
 		
 	@Override
 	public void postStop() throws Exception {
@@ -78,39 +93,16 @@ public class TailerActor extends GuiceAbstractActor implements TailerListener {
 					final Endpoint endpoint = Endpoint.valueOf(f.getConf());
 										
 					router = router.addRoutee(buildRoutee(
-						f.getConf(),
-						getContext().actorOf(
-							GuiceActorUtils.makeProps(getContext().system(), endpoint.getActorClazz()),							
-							endpoint.actorName()
-						)											
+						f.getConf(), endpoint
 					));
 				} else {
 					LOGGER.info("NOT expired {}", f);
 					getContext().parent().tell(f, getSelf());
 				}
 			})
-			.match(SingleConfiguration.class, c -> {	
-				conf = c;
-				router = new Router(new BroadcastRoutingLogic());		
-				
-				for (ConfigurationEndpoint ce : c.getEndpoints()) {
-					final Endpoint endpoint = Endpoint.valueOf(ce);
-					
-					router = router.addRoutee(buildRoutee(
-						ce,
-						getContext().actorOf(
-							GuiceActorUtils.makeProps(getContext().system(), endpoint.getActorClazz()),
-							endpoint.actorName()
-						)																	
-					));					
-				}
-
-				tailer = Tailer.create(
-					conf.getPath(), Charset.forName("UTF-8"), this, DELAY, FROM_END, RE_OPEN, BUFFER_SIZE
-				);						
-			})
 			.matchAny(o -> {
 				LOGGER.warn("not handled message", o);
+				unhandled(o);
 			})
 			.build();
 	}
@@ -160,8 +152,11 @@ public class TailerActor extends GuiceAbstractActor implements TailerListener {
         );		
 	}
 
-	private Routee buildRoutee(ConfigurationEndpoint conf, ActorRef child) {		
-		child.tell(conf, ActorRef.noSender()); //configure					
+	private Routee buildRoutee(ConfigurationEndpoint conf, Endpoint endpoint) {		
+		final ActorRef child = getContext().actorOf(
+			Props.create(endpoint.getActorClazz(), conf), endpoint.actorName()
+		);
+							
 		getContext().watch(child); //to see Terminated event associated with 'child' actor
 		
 		return new ActorRefRoutee(child);		
