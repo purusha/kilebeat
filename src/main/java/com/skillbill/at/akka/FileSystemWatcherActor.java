@@ -43,10 +43,10 @@ public class FileSystemWatcherActor extends GuiceAbstractActor {
 			
 			if (resource.exists()) {
 				LOGGER.info("on path {} ... run tail", resource);				
-				system.actorSelection("user/manager").tell(obj, ActorRef.noSender());								
+				buildTailerActorFor(obj);								
 			} else {
-				LOGGER.info("on path {} ... can't run tail", resource);				
-				getSelf().tell(obj, ActorRef.noSender());
+				LOGGER.info("on path {} ... can't run tail", resource);											
+				fsWatcher.watch(obj);
 			}
 		});						
 	}
@@ -69,15 +69,7 @@ public class FileSystemWatcherActor extends GuiceAbstractActor {
 	@Override
 	public Receive createReceive() {
 		return receiveBuilder()
-			.match(SingleConfiguration.class, sc -> {				
-				final File parentFile = sc.getPath().getParentFile();
-				LOGGER.debug("parentFile {} for configuration {}", parentFile, sc);
-
-				fsWatcher.watch(sc, parentFile);				
-			})
 			.matchEquals(SCHEDULATION_WATCH, sw -> {				
-				this.schedule = system.scheduler().scheduleOnce(FiniteDuration.create(30, TimeUnit.SECONDS), 
-					getSelf(), SCHEDULATION_WATCH, system.dispatcher(), getSelf());
 				
 				LOGGER.info("### check new files");								
 
@@ -93,22 +85,32 @@ public class FileSystemWatcherActor extends GuiceAbstractActor {
 						
 						if (canHandle.isPresent() && !consumedResource.contains(path)) {
 							LOGGER.info("on path {} ... run tail", canHandle.get().getPath());
-							consumedResource.add(path);
-							system.actorSelection("user/manager").tell(canHandle.get(), ActorRef.noSender());
+							consumedResource.add(path);							
+							buildTailerActorFor(canHandle.get());
 						} else {
 							final String parentPath = e.getKey().getPath().getParent();
 							LOGGER.info("on path {} ... can't run tail", parentPath + "/" + path);
 						}
 					}
-				});
+				});				
 								
 				//XXX remove elements from keys Map when file without regExp is viewed
+				
+				this.schedule = system.scheduler().scheduleOnce(FiniteDuration.create(30, TimeUnit.SECONDS), 
+						getSelf(), SCHEDULATION_WATCH, system.dispatcher(), getSelf());
+				
 			})
 			.matchAny(o -> {
 				LOGGER.warn("not handled message", o);
 				unhandled(o);
 			})			
 			.build();
+	}
+	
+	private void buildTailerActorFor(SingleConfiguration sc) {
+		system
+			.actorSelection("user/manager")
+			.tell(sc, ActorRef.noSender());
 	}
 
 	private Optional<SingleConfiguration> isRelated(WatchEvent<?> we, SingleConfiguration initialConf) {
@@ -126,10 +128,11 @@ public class FileSystemWatcherActor extends GuiceAbstractActor {
 		return Optional.ofNullable(newSc);
 	}
 
-	private boolean match(String initialName, String currentName) {	
-		final String regex = initialName.replace("?", ".?").replace("*", ".*?");		
+	//XXX until new idea, we only support '?' and '*' placeholders
+	private boolean match(String configName, String fileName) {	
+		final String regex = configName.replace("?", ".?").replace("*", ".*?");		
 		final Pattern pattern = Pattern.compile(regex);
 		
-		return pattern.matcher(currentName).matches();
+		return pattern.matcher(fileName).matches();
 	}	
 }

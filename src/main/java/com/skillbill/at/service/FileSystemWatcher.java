@@ -2,7 +2,6 @@ package com.skillbill.at.service;
 
 import static java.nio.file.StandardWatchEventKinds.ENTRY_CREATE;
 
-import java.io.File;
 import java.io.IOException;
 import java.nio.file.Path;
 import java.nio.file.WatchKey;
@@ -40,13 +39,16 @@ public class FileSystemWatcher implements AutoCloseable {
 		});		
 	}
 
-	public void watch(SingleConfiguration sc, File parentFile) throws Exception {
-		//XXX NPE on parentFile
-		final Path path = parentFile.toPath();
-		final WatchService wService = path.getFileSystem().newWatchService();				
-						
-		keys.put(sc, path.register(wService, ENTRY_CREATE));
-		watchers.put(sc, wService);
+	public void watch(SingleConfiguration sc) {
+		try {
+			final Path path = sc.getPath().getParentFile().toPath();
+			final WatchService wService = path.getFileSystem().newWatchService();
+			
+			keys.put(sc, path.register(wService, ENTRY_CREATE));
+			watchers.put(sc, wService);			
+		} catch (Exception e) {
+			e.printStackTrace();
+		}										
 	}
 	
 	public Map<SingleConfiguration, WatchKey> getKeys() {

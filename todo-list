@@ -6,18 +6,22 @@ Alternatives of apache Tailer class
 
 Type of output 
 ---------------
+
+	file
+		> ???
+
 	http
 		> https support
 		> number of retry OR none
-		> bulk_max_size
+		> bulk_max_size && bulk_max_timeout
 	
 	kafka
 		> number of retry OR none
-		> bulk_max_size
+		> bulk_max_size && bulk_max_timeout
 			
 	redis
 		> number of retry OR none
-		> bulk_max_size
+		> bulk_max_size && bulk_max_timeout
 			
 	fluentd
 		> simple logging into
