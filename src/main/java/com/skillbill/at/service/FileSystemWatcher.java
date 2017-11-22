@@ -47,7 +47,7 @@ public class FileSystemWatcher implements AutoCloseable {
 			keys.put(sc, path.register(wService, ENTRY_CREATE));
 			watchers.put(sc, wService);			
 		} catch (Exception e) {
-			e.printStackTrace();
+			LOGGER.error("", e);
 		}										
 	}
 	

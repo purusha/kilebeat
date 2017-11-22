@@ -261,7 +261,7 @@ public final class ConfigurationValidator {
 				try {
 					BeanUtils.copyProperties(dest, ep);
 				} catch (Exception e) {
-					e.printStackTrace();
+					LOGGER.error("", e);
 				}
 				
 				ret.addEndpoint(dest);
