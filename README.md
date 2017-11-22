@@ -38,5 +38,5 @@ exports = [
 
 An example of json sent to the connector is
 ```
-{"line":"test 123","ts":1511043044203,"path":"/Users/power/Tmp/9cd29f449df8192c2d0de449e1e7583f"}
+{ "line":"test 123", "ts":1511043044203, "path":"/Users/power/Tmp/9cd29f449df8192c2d0de449e1e7583f" }
 ```
