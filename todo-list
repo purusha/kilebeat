@@ -4,24 +4,16 @@ Alternatives of apache Tailer class
 	> https://github.com/maartenl/jtail/tree/master/src/com/tools/jtail
 
 
+Behaviour of export
+------------------------------------	
+	> number of retry OR none
+
+
 Type of output 
----------------
-
-	file
-		> ???
-
-	http
-		> https support
-		> number of retry OR none
-		> bulk_max_size && bulk_max_timeout
+------------------------------------
+	> file
+	> redis			
+	> fluentd
 	
-	kafka
-		> number of retry OR none
-		> bulk_max_size && bulk_max_timeout
-			
-	redis
-		> number of retry OR none
-		> bulk_max_size && bulk_max_timeout
-			
-	fluentd
-		> simple logging into
+
+> Test, test, test ... and also TESTSTTSTSTSTSTSSS

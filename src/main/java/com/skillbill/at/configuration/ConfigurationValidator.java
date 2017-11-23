@@ -109,6 +109,13 @@ public final class ConfigurationValidator {
 					}					
 				}
 				
+				boolean hasBulk = eConfig.hasPath("bulk");
+				
+				if (hasBulk) {
+					if (!eConfig.hasPath("bulk.size")) {
+						response.addError(i, String.format("%d element does not contain mandatory 'bulk.size' property", i));
+					}
+				}
 				
 				/*
 				 * finally add Configuration 
@@ -159,12 +166,20 @@ public final class ConfigurationValidator {
 			
 			if (c.hasPath("send-if-not-match")) {
 				rules.addNotMatch(Pattern.compile(c.getString("send-if-not-match")));
-			}					
+			}			
 			
-			final SingleConfiguration build = new SingleConfiguration(c.getString("path"), rules);
+			final Bulk bulk = new Bulk(
+				c.hasPath("bulk.size") ? c.getInt("bulk.size") : null,
+				c.hasPath("bulk.timeout") ? c.getInt("bulk.timeout") : null
+			);
+			
+			final SingleConfiguration build = new SingleConfiguration(c.getString("path"), rules, bulk);
 			
 			Arrays.stream(Endpoint.values()).forEach(e -> {				
 				final Config config = c.hasPath(e.getConfKey()) ? c.getObject(e.getConfKey()).toConfig() : null;
+				
+				//XXX potrebbe diventare if (config != null) {
+				//visto che la validazione è fatta a priori!!!
 				
 				if (config != null && !config.isEmpty()) {
 					build.addEndpoint(e.buildEndpoint(config));
@@ -196,11 +211,29 @@ public final class ConfigurationValidator {
 			this.exports = e;
 		}	
 		
-		//return in order by key !!?
+		//return sorted by key !!?
 		public Collection<SingleConfiguration> getExports() { 			
 			return exports.values();
 		}
 	}	
+	
+	@ToString
+	public final class Bulk {		
+		@Getter
+		private final Integer size;
+		
+		@Getter
+		private final Integer timeout;
+		
+		public Bulk(Integer size, Integer timeout) {
+			this.size = size;
+			this.timeout = timeout;
+		}
+		
+		public boolean isConfigured() {
+			return size != null; //timeout is OPTIONAL
+		}		
+	}
 	
 	@ToString
 	public final class SendRules {		
@@ -234,9 +267,13 @@ public final class ConfigurationValidator {
 		@Getter
 		private final SendRules rules;
 		
-		private SingleConfiguration(String path, SendRules rules) {
+		@Getter
+		private Bulk bulk;
+		
+		private SingleConfiguration(String path, SendRules rules, Bulk bulk) {
 			this.path = path;
 			this.rules = rules;
+			this.bulk = bulk;
 			this.endpoints = new ArrayList<>();
 		}
 		
@@ -253,7 +290,7 @@ public final class ConfigurationValidator {
 		}
 
 		public SingleConfiguration makeCopy(String path) {
-			final SingleConfiguration ret = new SingleConfiguration(path, rules);
+			final SingleConfiguration ret = new SingleConfiguration(path, rules, bulk);
 			
 			endpoints.forEach(ep -> {				
 				final ConfigurationEndpoint dest = buildFakeEndpoint(ep);

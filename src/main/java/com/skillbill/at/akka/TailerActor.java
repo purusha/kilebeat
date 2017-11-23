@@ -32,18 +32,26 @@ import scala.concurrent.duration.Duration;
 
 @Slf4j
 public class TailerActor extends GuiceAbstractActor implements TailerListener {		
+	
 	private static final int DELAY = 50;
 	private static final int BUFFER_SIZE = 1000;
 	private static final boolean FROM_END = true;
 	private static final boolean RE_OPEN = true;
 
 	private final SingleConfiguration conf;	
-	private final Tailer tailer;
+	private final Tailer tailer;	
 	private Router router;
-	
+		
 	public TailerActor(SingleConfiguration conf) {
 		this.conf = conf;
-		this.router = new Router(new BroadcastRoutingLogic());		
+		
+		if (conf.getBulk().isConfigured()) {
+			this.router = new Router(new BulkBroadcastRoutingLogic(conf.getBulk().getSize()));
+			
+			tellToBulkTimeoutActor();
+		} else {
+			this.router = new Router(new BroadcastRoutingLogic());			
+		}
 		
 		for (ConfigurationEndpoint ce : conf.getEndpoints()) {
 			final Endpoint endpoint = Endpoint.valueOf(ce);
@@ -62,6 +70,10 @@ public class TailerActor extends GuiceAbstractActor implements TailerListener {
 		LOGGER.info("end {} ", getSelf().path());
 		
 		tailer.stop();
+		
+		if (conf.getBulk().isConfigured()) {			
+			tellToBulkTimeoutActor();
+		}		
 	}
 	
 	@Override
@@ -73,21 +85,21 @@ public class TailerActor extends GuiceAbstractActor implements TailerListener {
 	@Override
 	public Receive createReceive() {
 		return receiveBuilder()
-			.match(NewLineEvent.class, s -> {
+			.match(NewLineEvent.class, s -> { //from self
 				//LOGGER.info("[row] {}", s);
 				
 				if (conf.getRules().mustBeSent(s.getLine())) {
 					router.route(s, ActorRef.noSender());	
 				}
 			})
-			.match(Terminated.class, t -> {				
+			.match(Terminated.class, t -> {	//from any childs			
 				final ActorRef fail = t.actor();
-				LOGGER.warn("actor {} is terminated", fail);
+				LOGGER.warn("actor {} is terminated", fail.path());
 				
 				getContext().unwatch(fail);				
 				router = router.removeRoutee(fail);																			
 			})
-			.match(EndPointFailed.class, f -> {
+			.match(EndPointFailed.class, f -> { //from any childs
 				if (f.isExpired()) {
 					LOGGER.info("expired {}", f);					
 					final Endpoint endpoint = Endpoint.valueOf(f.getConf());
@@ -100,6 +112,11 @@ public class TailerActor extends GuiceAbstractActor implements TailerListener {
 					getContext().parent().tell(f, getSelf());
 				}
 			})
+			.matchEquals(BulkTimeoutActor.BULK_TIMEOUT, o -> { //from /user/bulk-timeout				
+				if (conf.getBulk().isConfigured()) {
+					router.route(o, ActorRef.noSender());
+				}								
+			})			
 			.matchAny(o -> {
 				LOGGER.warn("not handled message", o);
 				unhandled(o);
@@ -130,8 +147,6 @@ public class TailerActor extends GuiceAbstractActor implements TailerListener {
 		if (ex instanceof FileNotFoundException) { //occur when file is deleted during tailer are working on!!
 			LOGGER.info("file to tail not found {}", conf.getPath());
 			
-			//XXX stop before all the children
-			
 			getSelf().tell(PoisonPill.getInstance(), ActorRef.noSender());
 		}
 	}
@@ -160,5 +175,12 @@ public class TailerActor extends GuiceAbstractActor implements TailerListener {
 		getContext().watch(child); //to see Terminated event associated with 'child' actor
 		
 		return new ActorRefRoutee(child);		
-	}	
+	}
+
+	private void tellToBulkTimeoutActor() {
+		getContext()
+			.actorSelection("/user/bulk-timeout")				
+			.tell(conf.getBulk(), getSelf());
+	}
+	
 }

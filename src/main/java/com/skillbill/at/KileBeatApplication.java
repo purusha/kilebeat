@@ -2,6 +2,7 @@ package com.skillbill.at;
 
 import com.google.inject.Inject;
 import com.google.inject.Injector;
+import com.skillbill.at.akka.BulkTimeoutActor;
 import com.skillbill.at.akka.ExportsManagerActor;
 import com.skillbill.at.akka.FileSystemWatcherActor;
 import com.skillbill.at.akka.RetrieveActors;
@@ -61,7 +62,11 @@ public class KileBeatApplication {
         system.actorOf(
     		GuiceActorUtils.makeProps(system, FileSystemWatcherActor.class), "watcher"
 		);
-                
+
+        system.actorOf(
+    		GuiceActorUtils.makeProps(system, BulkTimeoutActor.class), "bulk-timeout"
+		);
+
         LOGGER.info("-------------------------------------------------");
         LOGGER.info(" KileBeat STARTED");
         LOGGER.info("-------------------------------------------------");

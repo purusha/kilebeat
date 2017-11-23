@@ -12,28 +12,39 @@ Example configuration and usage:
 ```
 exports = [
     {
-        path = "/Users/power/Tmp/a"
-        send-if-match = "^\\d.*"			#OPTIONAL 		
+        path = "/Users/power/Tmp/a" 		
         http {
             url = "http://localhost:55555/log"
         }
     }
     {
         path = "/Users/power/Tmp/*.log"
-        send-if-not-match = ".*[1-9].*"		#OPTIONAL
         http {
             url = "http://localhost:55555/test"
         }
     }
     {
-        path = "/Users/power/Tmp/q"
-        send-if-match = "^\\d.*"			#OPTIONAL        
+        path = "/Users/power/Tmp/q"        
         kafka {
             host = "localhost:44444"
             queue = "test"
         }
     }
 ]
+```
+
+Any export Object should contain some behaviour config
+
+```
+bulk {
+	size = X (number of in memory lines) (mandatory)
+	timeout = Y (number of in seconds ... before is forced to send messages to connectors) (optional)
+}
+
+send-if-match = "^\\d.*" (it's clear)
+
+send-if-not-match = ".*[1-9].*"	(it's clear)
+
 ```
 
 An example of json sent to the connector is
