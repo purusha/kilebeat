@@ -53,6 +53,8 @@ public class BulkTimeoutActor extends GuiceAbstractActor {
 	public void postStop() throws Exception {
 		super.postStop();
 		LOGGER.info("end {} ", getSelf().path());
+		
+		mapping.values().forEach(c -> c.cancel());		
 	}
 
 	@Override

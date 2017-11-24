@@ -2,6 +2,7 @@ package com.skillbill.at.akka;
 
 import java.io.File;
 import java.io.IOException;
+import java.nio.file.Files;
 import java.nio.file.Path;
 import java.nio.file.WatchEvent;
 import java.nio.file.WatchKey;
@@ -45,8 +46,9 @@ public class FileSystemWatcherActor extends GuiceAbstractActor {
 				LOGGER.info("on path {} ... run tail", resource);				
 				buildTailerActorFor(obj);								
 			} else {
-				LOGGER.info("on path {} ... can't run tail", resource);											
+				LOGGER.info("on path {} ... can't run tail, but i watch it for new files that will be generated", resource);											
 				fsWatcher.watch(obj);
+				tryToResolveActualFiles(obj);				
 			}
 		});						
 	}
@@ -71,7 +73,7 @@ public class FileSystemWatcherActor extends GuiceAbstractActor {
 		return receiveBuilder()
 			.matchEquals(SCHEDULATION_WATCH, sw -> {				
 				
-				LOGGER.info("### check new files");								
+				LOGGER.info("### check new files");
 
 				//XXX every WatchKey should poll the same file ... but i can process it only one times 
 				final Set<Path> consumedResource = new HashSet<>();
@@ -80,13 +82,13 @@ public class FileSystemWatcherActor extends GuiceAbstractActor {
 					final WatchKey wKey = e.getValue();
 					
 					for (WatchEvent<?> we : wKey.pollEvents()) {
-						final Optional<SingleConfiguration> canHandle = isRelated(we, e.getKey());
+						final Optional<SingleConfiguration> isRelated = related(e.getKey(), (Path)we.context());
 						final Path path = (Path)we.context();
 						
-						if (canHandle.isPresent() && !consumedResource.contains(path)) {
-							LOGGER.info("on path {} ... run tail", canHandle.get().getPath());
+						if (isRelated.isPresent() && !consumedResource.contains(path)) {
+							LOGGER.info("on path {} ... run tail", isRelated.get().getPath());
 							consumedResource.add(path);							
-							buildTailerActorFor(canHandle.get());
+							buildTailerActorFor(isRelated.get());
 						} else {
 							final String parentPath = e.getKey().getPath().getParent();
 							LOGGER.info("on path {} ... can't run tail", parentPath + "/" + path);
@@ -97,7 +99,7 @@ public class FileSystemWatcherActor extends GuiceAbstractActor {
 				//XXX remove elements from keys Map when file without regExp is viewed
 				
 				this.schedule = system.scheduler().scheduleOnce(FiniteDuration.create(30, TimeUnit.SECONDS), 
-						getSelf(), SCHEDULATION_WATCH, system.dispatcher(), getSelf());
+					getSelf(), SCHEDULATION_WATCH, system.dispatcher(), getSelf());
 				
 			})
 			.matchAny(o -> {
@@ -109,14 +111,25 @@ public class FileSystemWatcherActor extends GuiceAbstractActor {
 	
 	private void buildTailerActorFor(SingleConfiguration sc) {
 		system
-			.actorSelection("user/manager")
+			.actorSelection("/user/manager")
 			.tell(sc, ActorRef.noSender());
 	}
+	
+	private void tryToResolveActualFiles(SingleConfiguration sc) {
+		final Path path = sc.getPath().getParentFile().toPath();
+		
+		try {			
+			Files.list(path).forEach(p -> {
+				related(sc, p).ifPresent(c -> buildTailerActorFor(c));
+			});
+		} catch (IOException e) {
+			LOGGER.error("", e);
+		}		
+	}	
 
-	private Optional<SingleConfiguration> isRelated(WatchEvent<?> we, SingleConfiguration initialConf) {
-		final Path context = (Path)we.context();	
+	private Optional<SingleConfiguration> related(SingleConfiguration initialConf, final Path path) {
 		final File initialResource = initialConf.getPath();				
-		final String currentName = context.toFile().getName();
+		final String currentName = path.toFile().getName();
 		
 		final SingleConfiguration newSc;		
 		if (match(initialResource.getName(), currentName)) {
