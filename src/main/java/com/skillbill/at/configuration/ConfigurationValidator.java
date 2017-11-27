@@ -19,7 +19,9 @@ import java.util.regex.PatternSyntaxException;
 import java.util.stream.IntStream;
 
 import org.apache.commons.beanutils.BeanUtils;
+import org.apache.commons.lang3.StringUtils;
 
+import com.skillbill.at.configuration.ConfigurationValidator.SingleConfiguration;
 import com.skillbill.at.service.Endpoint;
 import com.typesafe.config.Config;
 import com.typesafe.config.ConfigFactory;
@@ -139,6 +141,39 @@ public final class ConfigurationValidator {
 			return false;
 		}		
 	}
+	
+	private boolean isValid(SingleConfiguration conf) {		
+		final File path = conf.getPath();
+		
+		if (! path.isAbsolute()) {
+			return false;
+		}
+		
+		final String sPath = path.getPath();	
+		final int lastSlash = StringUtils.lastIndexOf(sPath, "/");				
+		
+		final int lastQ = StringUtils.lastIndexOf(sPath, "?");
+		final String[] arrayQ = StringUtils.split(sPath, "?");
+		if (lastQ != -1 && arrayQ.length > 1) {
+			return false;
+		}
+		if (lastQ != -1 && lastQ < lastSlash) {
+			return false;
+		}
+		
+		final int lastA = StringUtils.lastIndexOf(sPath, "*");
+		final String[] arrayA = StringUtils.split(sPath, "*");
+		if (lastA != -1 && arrayA.length > 1) {
+			return false;
+		}		
+		if (lastA != -1 && lastA < lastSlash) {
+			return false;
+		}				
+		
+		return true;
+	}	
+	
+	// -----------------------------------------------------------------------
 
 	public final class ValidationResponse {	
 		private final Map<Integer, SingleConfiguration> configs;
@@ -204,6 +239,8 @@ public final class ConfigurationValidator {
 		}
 	}	
 	
+	// -----------------------------------------------------------------------	
+	
 	public final class ExportsConfiguration {
 		private final SortedMap<Integer, SingleConfiguration> exports;
 		
@@ -216,6 +253,8 @@ public final class ConfigurationValidator {
 			return exports.values();
 		}
 	}	
+	
+	// -----------------------------------------------------------------------
 	
 	@ToString
 	public final class Bulk {		
@@ -234,6 +273,8 @@ public final class ConfigurationValidator {
 			return size != null; //timeout is OPTIONAL
 		}		
 	}
+	
+	// -----------------------------------------------------------------------
 	
 	@ToString
 	public final class SendRules {		
@@ -258,6 +299,8 @@ public final class ConfigurationValidator {
 			}
 		}
 	}
+	
+	// -----------------------------------------------------------------------
 	
 	@ToString
 	public final class SingleConfiguration {		
@@ -312,6 +355,8 @@ public final class ConfigurationValidator {
 			return Endpoint.valueOf(ep).buildEndpoint(new EmptyConfig());
 		}		
 	}	
+	
+	// -----------------------------------------------------------------------
 	
 	private class EmptyConfig implements Config {
 		@Override

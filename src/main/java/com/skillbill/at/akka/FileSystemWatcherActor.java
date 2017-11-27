@@ -115,25 +115,25 @@ public class FileSystemWatcherActor extends GuiceAbstractActor {
 			.tell(sc, ActorRef.noSender());
 	}
 	
-	private void tryToResolveActualFiles(SingleConfiguration sc) {
-		final Path path = sc.getPath().getParentFile().toPath();
+	private void tryToResolveActualFiles(SingleConfiguration conf) {
+		final Path path = conf.getPath().getParentFile().toPath();
 		
 		try {			
 			Files.list(path).forEach(p -> {
-				related(sc, p).ifPresent(c -> buildTailerActorFor(c));
+				related(conf, p).ifPresent(c -> buildTailerActorFor(c));
 			});
 		} catch (IOException e) {
 			LOGGER.error("", e);
 		}		
 	}	
 
-	private Optional<SingleConfiguration> related(SingleConfiguration initialConf, final Path path) {
-		final File initialResource = initialConf.getPath();				
+	private Optional<SingleConfiguration> related(SingleConfiguration conf, final Path path) {
+		final File initialResource = conf.getPath();				
 		final String currentName = path.toFile().getName();
 		
 		final SingleConfiguration newSc;		
 		if (match(initialResource.getName(), currentName)) {
-			newSc = initialConf.makeCopy(initialResource.getParent() + "/" + currentName);
+			newSc = conf.makeCopy(initialResource.getParent() + "/" + currentName);
 		} else {
 			newSc = null;
 		}	
@@ -147,5 +147,6 @@ public class FileSystemWatcherActor extends GuiceAbstractActor {
 		final Pattern pattern = Pattern.compile(regex);
 		
 		return pattern.matcher(fileName).matches();
-	}	
+	}
+		
 }

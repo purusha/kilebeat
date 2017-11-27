@@ -7,7 +7,7 @@ Alternatives of apache Tailer class
 Behaviour of export
 ------------------------------------	
 	> number of retry OR none
-
+	> enabled (default is true)
 
 Type of output 
 ------------------------------------
