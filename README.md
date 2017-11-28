@@ -38,7 +38,7 @@ Any export Object should contain some behaviour config
 ```
 bulk {
 	size = X (number of in memory lines) (mandatory)
-	timeout = Y (number of in seconds ... before is forced to send messages to connectors) (optional)
+	timeout = Y (number of in seconds before is forced to send messages to connectors) (optional)
 }
 
 send-if-match = "^\\d.*" (it's clear)

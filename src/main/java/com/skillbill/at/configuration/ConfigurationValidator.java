@@ -19,9 +19,7 @@ import java.util.regex.PatternSyntaxException;
 import java.util.stream.IntStream;
 
 import org.apache.commons.beanutils.BeanUtils;
-import org.apache.commons.lang3.StringUtils;
 
-import com.skillbill.at.configuration.ConfigurationValidator.SingleConfiguration;
 import com.skillbill.at.service.Endpoint;
 import com.typesafe.config.Config;
 import com.typesafe.config.ConfigFactory;
@@ -142,36 +140,36 @@ public final class ConfigurationValidator {
 		}		
 	}
 	
-	private boolean isValid(SingleConfiguration conf) {		
-		final File path = conf.getPath();
-		
-		if (! path.isAbsolute()) {
-			return false;
-		}
-		
-		final String sPath = path.getPath();	
-		final int lastSlash = StringUtils.lastIndexOf(sPath, "/");				
-		
-		final int lastQ = StringUtils.lastIndexOf(sPath, "?");
-		final String[] arrayQ = StringUtils.split(sPath, "?");
-		if (lastQ != -1 && arrayQ.length > 1) {
-			return false;
-		}
-		if (lastQ != -1 && lastQ < lastSlash) {
-			return false;
-		}
-		
-		final int lastA = StringUtils.lastIndexOf(sPath, "*");
-		final String[] arrayA = StringUtils.split(sPath, "*");
-		if (lastA != -1 && arrayA.length > 1) {
-			return false;
-		}		
-		if (lastA != -1 && lastA < lastSlash) {
-			return false;
-		}				
-		
-		return true;
-	}	
+//	private boolean isValid(SingleConfiguration conf) {		
+//		final File path = conf.getPath();
+//		
+//		if (! path.isAbsolute()) {
+//			return false;
+//		}
+//		
+//		final String sPath = path.getPath();	
+//		final int lastSlash = StringUtils.lastIndexOf(sPath, "/");				
+//		
+//		final int lastQ = StringUtils.lastIndexOf(sPath, "?");
+//		final String[] arrayQ = StringUtils.split(sPath, "?");
+//		if (lastQ != -1 && arrayQ.length > 1) {
+//			return false;
+//		}
+//		if (lastQ != -1 && lastQ < lastSlash) {
+//			return false;
+//		}
+//		
+//		final int lastA = StringUtils.lastIndexOf(sPath, "*");
+//		final String[] arrayA = StringUtils.split(sPath, "*");
+//		if (lastA != -1 && arrayA.length > 1) {
+//			return false;
+//		}		
+//		if (lastA != -1 && lastA < lastSlash) {
+//			return false;
+//		}				
+//		
+//		return true;
+//	}	
 	
 	// -----------------------------------------------------------------------
 
@@ -350,7 +348,7 @@ public final class ConfigurationValidator {
 			return ret;			
 		}
 		
-		//XXX bad code ... please try another manner to do the same work!!?
+		//XXX bad code ... please find out another way to do the same work!!?
 		private ConfigurationEndpoint buildFakeEndpoint(ConfigurationEndpoint ep) {
 			return Endpoint.valueOf(ep).buildEndpoint(new EmptyConfig());
 		}		

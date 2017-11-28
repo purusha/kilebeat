@@ -8,7 +8,7 @@ import com.google.inject.Singleton;
 import com.skillbill.at.configuration.ConfigurationValidator;
 import com.skillbill.at.configuration.ConfigurationValidator.ExportsConfiguration;
 import com.skillbill.at.configuration.ConfigurationValidator.ValidationResponse;
-import com.skillbill.at.service.FileSystemWatcher;
+import com.skillbill.at.service.FileSystemWatcherService;
 
 public class AkkaModule implements Module {
 	@Override
@@ -23,7 +23,7 @@ public class AkkaModule implements Module {
 		}
 		
 		binder
-			.bind(FileSystemWatcher.class)
+			.bind(FileSystemWatcherService.class)
 			.in(Singleton.class);
 		
 		binder

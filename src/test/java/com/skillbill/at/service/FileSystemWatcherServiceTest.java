@@ -4,7 +4,7 @@ import static org.junit.Assert.*;
 
 import org.junit.Test;
 
-public class FileSystemWatcherTest {
+public class FileSystemWatcherServiceTest {
 
 	@Test
 	public void test() {

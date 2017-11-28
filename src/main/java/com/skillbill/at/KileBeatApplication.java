@@ -28,8 +28,7 @@ public class KileBeatApplication {
 	public void run() throws Exception {
 		
         //create system
-        final ActorSystem system = ActorSystem.create("kile", ConfigFactory.load());
-        system.registerExtension(GuiceExtension.provider);
+        final ActorSystem system = ActorSystem.create("kile", ConfigFactory.load());        
         
 		//Add shutdownhook
 		Runtime.getRuntime().addShutdownHook(new Thread(() -> {
@@ -39,6 +38,8 @@ public class KileBeatApplication {
 			
             system.terminate();
         }));
+		
+		system.registerExtension(GuiceExtension.provider);
 
         //configure Guice
         final GuiceExtensionImpl guiceExtension = GuiceExtension.provider.get(system);
