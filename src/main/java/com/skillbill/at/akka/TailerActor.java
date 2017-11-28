@@ -45,10 +45,10 @@ public class TailerActor extends GuiceAbstractActor implements TailerListener {
 	public TailerActor(SingleConfiguration conf) {
 		this.conf = conf;
 		
-		if (conf.getBulk().isConfigured()) {
+		if (conf.getBulk().isAvailable()) {
 			this.router = new Router(new BulkBroadcastRoutingLogic(conf.getBulk().getSize()));
 			
-			tellToBulkTimeoutActor();
+			registerToBulkTimeoutActor();
 		} else {
 			this.router = new Router(new BroadcastRoutingLogic());			
 		}
@@ -71,8 +71,8 @@ public class TailerActor extends GuiceAbstractActor implements TailerListener {
 		
 		tailer.stop();
 		
-		if (conf.getBulk().isConfigured()) {			
-			tellToBulkTimeoutActor();
+		if (conf.getBulk().isAvailable()) {			
+			registerToBulkTimeoutActor();
 		}		
 	}
 	
@@ -113,7 +113,7 @@ public class TailerActor extends GuiceAbstractActor implements TailerListener {
 				}
 			})
 			.matchEquals(BulkTimeoutActor.BULK_TIMEOUT, o -> { //from /user/bulk-timeout				
-				if (conf.getBulk().isConfigured()) {
+				if (conf.getBulk().isAvailable()) {
 					router.route(o, ActorRef.noSender());
 				}								
 			})			
@@ -177,7 +177,7 @@ public class TailerActor extends GuiceAbstractActor implements TailerListener {
 		return new ActorRefRoutee(child);		
 	}
 
-	private void tellToBulkTimeoutActor() {
+	private void registerToBulkTimeoutActor() {
 		getContext()
 			.actorSelection("/user/bulk-timeout")				
 			.tell(conf.getBulk(), getSelf());

@@ -267,7 +267,7 @@ public final class ConfigurationValidator {
 			this.timeout = timeout;
 		}
 		
-		public boolean isConfigured() {
+		public boolean isAvailable() {
 			return size != null; //timeout is OPTIONAL
 		}		
 	}
