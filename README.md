@@ -14,20 +14,20 @@ exports = [
     {
         path = "/Users/power/Tmp/a" 		
         http {
-            url = "http://localhost:55555/log"
+            url = "http://localhost:55555/testA"
         }
     }
     {
         path = "/Users/power/Tmp/*.log"
         http {
-            url = "http://localhost:55555/test"
+            url = "http://localhost:55555/log"
         }
     }
     {
         path = "/Users/power/Tmp/q"        
         kafka {
             host = "localhost:44444"
-            queue = "test"
+            queue = "testQ"
         }
     }
 ]
