@@ -73,7 +73,6 @@ public class KafkaEndpointActor extends GuiceAbstractActor {
 				).get().offset();
 							
 				LOGGER.info("offset is {}", offset);
-
 				return null;
 			}		
 		});										

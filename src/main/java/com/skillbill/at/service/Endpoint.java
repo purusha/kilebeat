@@ -2,9 +2,11 @@ package com.skillbill.at.service;
 
 import org.apache.commons.lang3.RandomStringUtils;
 
+import com.skillbill.at.akka.GraphiteEndpointActor;
 import com.skillbill.at.akka.HttpEndpointActor;
 import com.skillbill.at.akka.KafkaEndpointActor;
 import com.skillbill.at.configuration.ConfigurationEndpoint;
+import com.skillbill.at.configuration.GraphiteEndPointConfiuration;
 import com.skillbill.at.configuration.HttpEndPointConfiuration;
 import com.skillbill.at.configuration.KafkaEndPointConfiuration;
 import com.typesafe.config.Config;
@@ -15,7 +17,8 @@ import lombok.Getter;
 public enum Endpoint {
 
 	HTTP("http", HttpEndPointConfiuration.class, HttpEndpointActor.class),
-	KAFKA("kafka", KafkaEndPointConfiuration.class, KafkaEndpointActor.class);
+	KAFKA("kafka", KafkaEndPointConfiuration.class, KafkaEndpointActor.class),
+	GRAPHITE("graphite", GraphiteEndPointConfiuration.class, GraphiteEndpointActor.class);
 	
 	@Getter
 	private final String confKey;
