@@ -6,7 +6,6 @@ import java.net.Socket;
 
 import org.apache.commons.io.IOUtils;
 
-import com.fasterxml.jackson.databind.ObjectMapper;
 import com.google.inject.Inject;
 import com.skillbill.at.akka.dto.EndPointFailed;
 import com.skillbill.at.akka.dto.NewLineEvent;
@@ -14,12 +13,12 @@ import com.skillbill.at.configuration.GraphiteEndPointConfiuration;
 import com.skillbill.at.guice.GuiceAbstractActor;
 
 import akka.actor.ActorRef;
+import akka.japi.pf.FI;
 import lombok.extern.slf4j.Slf4j;
 
 @Slf4j
 public class GraphiteEndpointActor extends GuiceAbstractActor {
 
-	private final ObjectMapper om;
 	private final GraphiteEndPointConfiuration conf;
 	private final Socket socket;
 	private final Writer writer;
@@ -27,8 +26,7 @@ public class GraphiteEndpointActor extends GuiceAbstractActor {
 	@Inject
 	public GraphiteEndpointActor(GraphiteEndPointConfiuration conf) throws Exception {
 		this.conf = conf;
-		this.om = new ObjectMapper();
-		this.socket = new Socket("localhost", 2003);
+		this.socket = new Socket("localhost", 2003); //XXX make this configurable please!!?
 		this.writer = new OutputStreamWriter(socket.getOutputStream());
 	}
 	
@@ -52,29 +50,23 @@ public class GraphiteEndpointActor extends GuiceAbstractActor {
 	@Override
 	public Receive createReceive() {
 		return receiveBuilder()
-			.match(NewLineEvent.class, s -> send(s))
+			.match(NewLineEvent.class, new FI.UnitApply<NewLineEvent>() {
+				@Override
+				public void apply(NewLineEvent s) throws Exception { //XXX send only file path and timestamp of event!!!
+					
+					try {			
+						writer.write(s.getPath() + " " + s.getTs() + "\n");
+						writer.flush();
+					} catch (final Exception e) {
+						LOGGER.error("", e);
+					}
+					
+				}})
 			.matchAny(o -> {
 				LOGGER.warn("not handled message", o);
 				unhandled(o);
 			})			
 			.build();
 	}
-
-	private Object send(NewLineEvent s) {
-		try {			
-			writer.write(serializeValue(s));
-			writer.flush();
-		} catch (final Exception e) {
-			LOGGER.error("", e);
-		}		
-		
-		return null;
-	}
-
-	private String serializeValue(NewLineEvent s) throws Exception {		
-		final String prefixedName = "boooo"; //?
-		final String graphiteName = prefixedName.replaceAll(" ", "_");
-		
-		return graphiteName + " " + om.writeValueAsString(s) + "\n";	
-	}
+	
 }
