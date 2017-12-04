@@ -25,8 +25,8 @@ public class FileSystemWatcherActor extends GuiceAbstractActor {
 	private Cancellable schedule;
 	
 	@Inject
-	public FileSystemWatcherActor(ExportsConfiguration config, FileSystemWatcherService watcher) throws IOException {
-		this.service = watcher;		
+	public FileSystemWatcherActor(ExportsConfiguration config, FileSystemWatcherService service) throws IOException {
+		this.service = service;		
 				
 		this.schedule = system.scheduler().scheduleOnce(FiniteDuration.create(30, TimeUnit.SECONDS), 
 			getSelf(), SCHEDULATION_WATCH, system.dispatcher(), getSelf());

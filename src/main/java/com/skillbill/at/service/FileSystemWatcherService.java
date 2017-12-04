@@ -28,7 +28,7 @@ import lombok.extern.slf4j.Slf4j;
 @Slf4j
 public class FileSystemWatcherService implements AutoCloseable {	
 	
-	//do the same work with one map Please!!??
+	//XXX do the same work with one structure
 	private final Map<SingleConfiguration, WatchService> watchers;
 	private final Map<SingleConfiguration, WatchKey> keys;
 

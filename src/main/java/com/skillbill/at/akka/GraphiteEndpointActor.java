@@ -52,16 +52,18 @@ public class GraphiteEndpointActor extends GuiceAbstractActor {
 		return receiveBuilder()
 			.match(NewLineEvent.class, new FI.UnitApply<NewLineEvent>() {
 				@Override
-				public void apply(NewLineEvent s) throws Exception { //XXX send only file path and timestamp of event!!!
+				public void apply(NewLineEvent s) throws Exception { //XXX add some retry ??
 					
-					try {			
-						writer.write(s.getPath() + " " + s.getTs() + "\n");
-						writer.flush();
-					} catch (final Exception e) {
-						LOGGER.error("", e);
+					if (!socket.isConnected()) {
+						throw new RuntimeException("Connection loss with graphite on " + conf);
 					}
+										
+					//see http://graphite.readthedocs.io/en/latest/feeding-carbon.html#getting-your-data-into-graphite					
+					writer.write(s.getPath() + " " + s.getLine().length() +  " " + s.getTs() + "\n"); 
+					writer.flush();
 					
-				}})
+				}
+			})
 			.matchAny(o -> {
 				LOGGER.warn("not handled message", o);
 				unhandled(o);

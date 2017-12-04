@@ -17,4 +17,12 @@ public class NewLineEvent {
 		this.path = path.toString();
 		this.ts = System.currentTimeMillis();
 	}	
+	
+	/*
+		
+		TODO
+		
+		> add hostname		
+		
+	 */
 }
